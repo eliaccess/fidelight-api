@@ -1,0 +1,10 @@
+{
+    "require": {
+        "mikecao/flight": "^1.3"
+    },
+    "autoload": {
+        "files": [
+            "functions/redirections.php"
+        ]
+    }
+}
