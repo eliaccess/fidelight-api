@@ -1,14 +1,14 @@
-#API of FideLight
+# API of FideLight
 This repository is reserved for the api architecture data, its generation and its maintenance.
-##Content of the repository
+## Content of the repository
 This repository contains all the data related to the database :
 
 * The API index that sets the routes and starts the system
 * The dependances files (***composer.json*** and ***composer.lock***)
 * The documentation pages to use the API
-##Documentation of the API
+## Documentation of the API
 Click [here]() to see the API documentation.
-##Installation, dependances and starting
+## Installation, dependances and starting
 Start by cloning the repository :
 ```bash
 $ git clone url_of_the_repository 
@@ -26,7 +26,7 @@ Then you can start the PHP server. For a dev instance you can use this command :
 ```bash
 $ php -S ip:port
 ```
-##How to add a route
+## How to add a route
 The API uses the micro-framework **[Flight](http://flightphp.com/)** to manage routes.
 All the routes are defined in ***index.php***.
 To create a new route, just add this line to the file :
