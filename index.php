@@ -4,17 +4,31 @@
  *  Then start the PHP server
  *  Made by LIMOUNI Elias
  */
-
 //Loading the dependances
 require 'vendor/autoload.php';
 
 //Links to redirect to pages
-define(WEBSITE_LINK ,'http://localhost:8000/api/users');
-define(DOC_LINK, 'documentation_link');
+define("WEBSITE_LINK", 'http://localhost:8000/website_link');
+define("DOC_LINK", 'http://localhost:8000/documentation_link');
+
+//Defining the database object using Medoo environment
+use Medoo\Medoo;
+$database = new Medoo([
+    'database_type' => 'mysql',
+    'database_name' => 'fidelight',
+    'server' => 'localhost',
+    'username' => 'devsql',
+    'password' => 'password',
+    'port' => 3306
+]);
 
 //Defining routes for the API
 Flight::route('/', 'redirect_to_home');
 Flight::route('/api/', 'redirect_to_doc');
+Flight::route('GET /user/@login', function($login){
+    global $database;
+    get_user_profile($login, $database);
+});
 
 //Starting Flight module to launch the API
 Flight::start();
