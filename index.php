@@ -26,11 +26,17 @@ $database = new Medoo([
 Flight::route('/', 'redirect_to_home');
 Flight::route('/api/', 'redirect_to_doc');
 Flight::route('GET /user/@login', function($login){
+    //Including the database variable
     global $database;
-    get_user_profile($login, $database);
+
+    //We receive all the headers now. The field "Password" contains the password of the user.
+    $headers = getallheaders();
+    get_user_profile($login, $headers['Password'], $database);
 });
 Flight::route('POST /user/', function (){
+    //Including the database variable
     global $database;
+
     $json = file_get_contents('php://input');
     user_registration_json($json, $database);
 });
