@@ -1,7 +1,6 @@
 <?php
 /*  Manage the creation of a new user account
  *  TO DO :
- *      - Add the verification if the login already exists in DB
  *      - Add the management of the user_types
  *  Made by Elias LIMOUNI
  */
@@ -13,7 +12,23 @@ function user_registration_json($json, $database){
      *  @database : Medoo variable that contains connection data of the database
      */
     $json = json_decode($json);
-    user_registration($json->login, $json->password, $json->mail, $json->birthdate, $database);
+
+    //Verify the existence of a user using the same login
+    $datas = $database->select("user",[
+            "user.id"
+        ], [
+            "login"=>$json->login
+        ]);
+
+
+    if (!$datas){
+        //Inserting the new user in the DB
+        user_registration($json->login, $json->password, $json->mail, $json->birthdate, $database);
+    }
+    else{
+        //If the account already exists then sens the error
+        generate_error("The login '$json->login' already exists.");
+    }
 }
 
 function user_registration($login, $password, $mail, $birthdate, $database){
@@ -32,5 +47,9 @@ function user_registration($login, $password, $mail, $birthdate, $database){
         "registration_date" => date("Y-m-d"),
         "user_type" => 1
     ]);
-    echo $data->rowCount();
+
+    //Verify the number of rows affected
+    if($data->rowCount() <> 1){
+        echo $data->errorCode();
+    };
 }

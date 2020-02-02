@@ -5,6 +5,7 @@
     },
     "autoload": {
         "files": [
+            "functions/error.php",
             "functions/redirections.php",
             "functions/user_data.php",
             "functions/user_registration.php"
