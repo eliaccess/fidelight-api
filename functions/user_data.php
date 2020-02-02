@@ -1,10 +1,16 @@
 <?php
+/*  Get the profile of a user
+ *  TO DO :
+ *      - Verify the identity of the person asking for these information
+ *  Made by Elias LIMOUNI
+ */
+
 function get_user_profile($login, $database){
-    /* Function that sends a JSON containing the profile of a person
-     * @login : string that contains the login of the person
-     *
-     * SQL Query :
-     * FROM user, (SELECT name FROM user_type WHERE id IN (SELECT user_type FROM user WHERE user.login=$login)) AS user_type WHERE user.login=$login;
+    /*  Function that sends a JSON containing the profile of a person
+     *  @login : string that contains the login of the person
+     *  @database : Medoo variable that contains connection data of the database
+     *  SQL Query :
+     *  FROM user, (SELECT name FROM user_type WHERE id IN (SELECT user_type FROM user WHERE user.login=$login)) AS user_type WHERE user.login=$login;
      */
     $datas = $database->select("user",
         [

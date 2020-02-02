@@ -29,6 +29,11 @@ Flight::route('GET /user/@login', function($login){
     global $database;
     get_user_profile($login, $database);
 });
+Flight::route('POST /user/', function (){
+    global $database;
+    $json = file_get_contents('php://input');
+    user_registration_json($json, $database);
+});
 
 //Starting Flight module to launch the API
 Flight::start();
