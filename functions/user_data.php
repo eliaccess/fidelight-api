@@ -24,6 +24,11 @@ function get_user_profile($login, $password, $database){
             "user_type.name (user_type)"
         ], ["login"=>$login, "hash_pwd" => $password]);
 
-    //Returning a JSON file that contains all the data
-    Flight::json($datas);
+    if (!$datas){
+        generate_error("Login and password don't match.");
+    }
+    else{
+        //Returning a JSON file that contains all the data
+        Flight::json($datas);
+    }
 }

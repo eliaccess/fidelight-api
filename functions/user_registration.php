@@ -1,7 +1,7 @@
 <?php
 /*  Manage the creation of a new user account
  *  TO DO :
- *      - Add the management of the user_types
+ *      - Nothing to add at the moment
  *  Made by Elias LIMOUNI
  */
 
@@ -39,17 +39,34 @@ function user_registration($login, $password, $mail, $birthdate, $database){
      *  @birthdate : date type variable that contains the user's date of birth
      *  @database : Medoo variable that contains connection data of the database
      */
-    //echo date("Y-m-d")."  ".$login."  ".$password."  ".$mail."  ".$birthdate;
+    //We calculate the age of the person to define his initial user_type
+    $age = date_diff(date_create($birthdate), date_create('today'))->y;
+
+    //Now we define the person's user_type
+
+    if($age <= 25){
+        //Student
+        $type = 2;
+    }
+    else if ($age >= 65){
+        //Senior
+        $type = 3;
+    }
+    else{
+        //Default
+        $type = 1;
+    }
+
     $data = $database->insert("user", [
         "login" => $login,
         "hash_pwd" => $password,
         "mail" => $mail,
         "registration_date" => date("Y-m-d"),
-        "user_type" => 1
+        "user_type" => $type
     ]);
 
     //Verify the number of rows affected
     if($data->rowCount() <> 1){
-        echo $data->errorCode();
+        generate_error($data->errorCode());
     };
 }

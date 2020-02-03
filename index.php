@@ -29,9 +29,17 @@ Flight::route('GET /user/@login', function($login){
     //Including the database variable
     global $database;
 
-    //We receive all the headers now. The field "Password" contains the password of the user.
+    //Read the headers that are received.
     $headers = getallheaders();
-    get_user_profile($login, $headers['Password'], $database);
+    //The field "Password" contains the password of the user. Verification if it's given.
+    if(!isset($headers['Password'])){
+        //If not set we send an error
+        generate_error("No password given in parameter.");
+    }
+    else{
+        //If set, then we try to get his profile
+        get_user_profile($login, $headers['Password'], $database);
+    }
 });
 Flight::route('POST /user/', function (){
     //Including the database variable
