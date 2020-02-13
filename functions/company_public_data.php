@@ -24,7 +24,7 @@ function get_company_public_data($login, $database){
         ], ["login"=>$login]);
 
     if (!$datas){
-        generate_error("Login and password don't match.");
+        generate_error("This company does not exist.");
     }
     else{
         //Returning a JSON file that contains all the data
