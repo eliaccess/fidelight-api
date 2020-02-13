@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "catfan/medoo",
-            "version": "v1.7.8",
+            "version": "v1.7.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/catfan/Medoo.git",
-                "reference": "dd9d570584cfb1e09ec470608479b86e41d5b60d"
+                "reference": "2d675f73e23f63bbaeb9a8aa33318659a3d3c32f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/catfan/Medoo/zipball/dd9d570584cfb1e09ec470608479b86e41d5b60d",
-                "reference": "dd9d570584cfb1e09ec470608479b86e41d5b60d",
+                "url": "https://api.github.com/repos/catfan/Medoo/zipball/2d675f73e23f63bbaeb9a8aa33318659a3d3c32f",
+                "reference": "2d675f73e23f63bbaeb9a8aa33318659a3d3c32f",
                 "shasum": ""
             },
             "require": {
@@ -64,7 +64,7 @@
                 "sql",
                 "sqlite"
             ],
-            "time": "2019-12-19T05:04:34+00:00"
+            "time": "2020-02-11T08:20:42+00:00"
         },
         {
             "name": "mikecao/flight",

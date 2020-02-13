@@ -9,7 +9,8 @@
             "functions/redirections.php",
             "functions/user_data.php",
             "functions/user_registration.php",
-            "functions/company_public_data.php"
+            "functions/company_public_data.php",
+            "functions/company_type_list.php"
         ]
     }
 }

@@ -23,8 +23,11 @@ $database = new Medoo([
 ]);
 
 //Defining routes for the API
+//Redirection routes
 Flight::route('/', 'redirect_to_home');
 Flight::route('/api/', 'redirect_to_doc');
+
+//User information routes
 Flight::route('GET /user/@login', function($login){
     //Including the database variable
     global $database;
@@ -48,10 +51,21 @@ Flight::route('POST /user/', function (){
     $json = file_get_contents('php://input');
     user_registration_json($json, $database);
 });
+
+//Company information routes
 Flight::route('GET /company/public/@login', function($login){
     global $database;
     //We now get the public data of the company
     get_company_public_data($login, $database);
+});
+
+//Company types list
+Flight::route('GET /company/type/', function(){
+    //Including the database variable
+    global $database;
+
+    //List all the company types
+    get_company_types($database);
 });
 
 //Starting Flight module to launch the API
