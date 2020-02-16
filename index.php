@@ -8,8 +8,8 @@
 require 'vendor/autoload.php';
 
 //Links to redirect to pages
-define("WEBSITE_LINK", 'http://localhost:8000/website_link');
-define("DOC_LINK", 'http://localhost:8000/documentation_link');
+define("WEBSITE_LINK", 'http://dev.fidelight.fr:42795');
+define("DOC_LINK", 'http://dev.fidelight.fr:42795/doc');
 
 //Defining the database object using Medoo environment
 use Medoo\Medoo;
@@ -17,15 +17,15 @@ $database = new Medoo([
     'database_type' => 'mysql',
     'database_name' => 'fidelight',
     'server' => 'localhost',
-    'username' => 'devsql',
-    'password' => 'password',
+    'username' => 'root',
+    'password' => 'jEbINuuup152*',
     'port' => 3306
 ]);
 
 //Defining routes for the API
 //Redirection routes
 Flight::route('/', 'redirect_to_home');
-Flight::route('/api/', 'redirect_to_doc');
+Flight::route('/doc/', 'redirect_to_doc');
 
 //User information routes
 Flight::route('GET /user/@login', function($login){
