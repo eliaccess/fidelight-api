@@ -37,8 +37,31 @@ function user_registration_json($json, $database){
             $name = $json->name;
         }
 
+        if(!isset($json->mail)){
+            $mail = null;
+        }
+        else{
+            $mail = $json->mail;
+        }
+
+        //verify the necessary values
+        if(!isset($json->login) OR $json->login == null){
+            generate_error("Login is necessary to create a new account.");
+            exit;
+        }
+
+        if(!isset($json->password) OR $json->password == null){
+            generate_error("Password is necessary to create a new account.");
+            exit;
+        }
+
+        if(!isset($json->birthdate) OR $json->birthdate == null OR validateDate($json->birthdate) == false){
+            generate_error("Unexpected date format.");
+            exit;
+        }
+
         //Inserting the new user in the DB
-        user_registration($json->login, $surname, $name, $json->password, $json->mail, $json->birthdate, $database);
+        user_registration($json->login, $surname, $name, $json->password, $mail, $json->birthdate, $database);
     }
     else{
         //If the account already exists then sens the error
@@ -83,6 +106,9 @@ function user_registration($login, $surname, $name, $password, $mail, $birthdate
             $type = get_id_from_user_type("Normal", $database);
         }
     }
+    else{
+        $type = get_id_from_user_type("Normal", $database);
+    }
 
     $data = $database->insert("user", [
         "id" => null,
@@ -100,7 +126,13 @@ function user_registration($login, $surname, $name, $password, $mail, $birthdate
     //Verify the number of rows affected
     if($data->rowCount() <> 1){
         generate_error($data->errorInfo());
+        exit;
     }
+
+    //Prepare the answer
+    $response = array("message" => "User '$login' has been created.");
+    //Send it in a JSON file
+    Flight::json($response);
 }
 
 function get_id_from_user_type($name, $database){
@@ -113,4 +145,14 @@ function get_id_from_user_type($name, $database){
         ["name"=>$name]);
 
     return $datas[0]['id'];
+}
+
+function validateDate($date, $format = 'Y-m-d')
+{
+    /*  Takes a string and returns true if it is a date
+     *  @date : string that may be a date
+     *  @format : format of the variable that may be a date
+     */
+    $d = DateTime::createFromFormat($format, $date);
+    return $d && $d->format($format) == $date;
 }
