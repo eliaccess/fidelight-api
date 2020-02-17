@@ -10,6 +10,7 @@ function get_company_types($database){
      *  @database : Medoo variable that contains connection data of the database
      */
     $datas = $database->select("company_type",[
+            "company_type.id",
             "company_type.name",
             "company_type.description"]
     );
