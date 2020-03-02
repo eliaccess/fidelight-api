@@ -25,6 +25,7 @@ function get_company_public_data($login, $database)
             "company.phone_code",
             "company.registration_date",
             "company.background_picture",
+            "company.logo",
             "company_type.name (company_type)"
         ], ["company.login" => $login]);
 

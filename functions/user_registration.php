@@ -22,7 +22,7 @@ function user_registration_json($json, $database){
 
 
     if (!$datas){
-        //Verifying optionnal values in the JSON file
+        //Verifying optional values in the JSON file
         if(!isset($json->surname)){
             $surname = null;
         }
@@ -73,7 +73,7 @@ function user_registration($login, $surname, $name, $password, $mail, $birthdate
     /*  Function that creates a new user in the database using his information passed in parameter.
      *  @login : string that contains the user's login
      *  @password : string that contains the user's password
-     *  @mail : string that contains the user's e-mail adress
+     *  @mail : string that contains the user's e-mail address
      *  @birthdate : date type variable that contains the user's date of birth
      *  @database : Medoo variable that contains connection data of the database
      */

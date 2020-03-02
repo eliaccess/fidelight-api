@@ -31,6 +31,7 @@ function get_user_profile($login, $password, $database){
 
     if(!$datas){
         generate_error("Login and password do not match.");
+        exit();
     }
     else{
         //Returning a JSON file that contains all the data
