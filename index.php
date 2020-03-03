@@ -27,6 +27,15 @@ $database = new Medoo([
 Flight::route('/', 'redirect_to_home');
 Flight::route('/doc/', 'redirect_to_doc');
 
+//User types list
+Flight::route('GET /user/type/', function(){
+    //Including the database variable
+    global $database;
+
+    //List all the company types
+    get_user_types($database);
+});
+
 //User information routes
 Flight::route('GET /user/@login', function($login){
     //Including the database variable
