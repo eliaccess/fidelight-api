@@ -23,7 +23,8 @@ function qrGen(length) {
        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
-}
+ }
+
 
 router.post("/api/user/register", regValidate, (req, res, next) => {
     try {
@@ -37,6 +38,7 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
             hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
             salt: BCRYPT_SALT_ROUNDS,
             email: req.body.email,
+            phone: req.body.phone,
             birthdate: req.body.birthdate,
             registration_date: new Date(),
             qr_key: qrCode,
@@ -44,21 +46,42 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
             active: '1'
         };
 
-        db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+        //Verifying that the user doesn't exist in table then inserting the data
+        db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(410).jsonp("This email is already linked to an account.");
+                    res.status(410).jsonp("Your email address or phone number is already registered !");
                 } else {
                     db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
                         if (err) {
                             res.status(410).jsonp(err);
                             next(err);
                         } else {
-                            const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name}, config.secret);
-                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                            //Adding the user to default user type
+                            db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                if (err) {
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    let regData2 = {
+                                        user: result.insertId,
+                                        user_type: rows2[0].id
+                                    };
+                                    db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                        if (err) {
+                                            res.status(410).jsonp(err);
+                                            next(err);
+                                        }
+                                        else{
+                                            const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name}, config.secret);
+                                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                                        }
+                                    });
+                                }
+                            });
                         }
                     });
                 }
@@ -159,12 +182,79 @@ router.get('/api/user/register/fauth', tokenAuth, (req, res, next) => {
     }
 });
 
+router.delete("/api/user/register", midWare.checkToken, (req, res, next) => {
+    try {
+        let regData = {
+            surname: "",
+            name: "",
+            phone: "",
+            hash_pwd: "",
+            email: "",
+            birthdate: "",
+            qr_key: "",
+            verified: '0',
+            active: '0'
+        };
+
+        db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                res.status(200).jsonp("Account Deleted Successfully!");
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+let logAuth = [
+    check('email', 'Username Must Be an Email Address').isEmail(),
+    check('password').exists()
+];
+
+router.get('/api/user/login', logAuth, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                if (rows[0]) {
+                    if (bcrypt.compareSync(req.body.password, rows[0].hash_pwd)) {
+                        const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
+                        res.status(200).jsonp({token: token });
+                    } else {
+                        res.status(410).jsonp("Authentication failed!");
+                    }
+                } else {
+                    res.status(410).jsonp("Authentication failed!");
+                }
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+/*
+router.post('/api/user/disconnect', midWare.checkToken, (req, res, next) => {
+    try {
+        res.status(200).jsonp("Token deleted successfully!");
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+*/
 
 let passAuth = [
     check('password').exists(),
     check('email', 'Username Must Be an Email Address').isEmail()
 ];
 
+/*
 router.put('/api/user/password', passAuth, (req, res, next) => {
     try {
         validationResult(req).throw();
@@ -193,7 +283,7 @@ router.put('/api/user/password', passAuth, (req, res, next) => {
         res.status(400).json(err);
     }
 });
-
+*/
 
 router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
     try {
@@ -221,6 +311,7 @@ router.put('/api/user/profile', midWare.checkToken, (req, res, next) => {
             surname: req.body.surname,
             name: req.body.name,
             email: req.body.email,
+            phone: req.body.phone,
             birthdate: req.body.birthdate
         };
         db.query("UPDATE user SET ? WHERE id = ?", [usrData, req.decoded.id], (err, rows, results) => {
@@ -241,7 +332,7 @@ let vrAuth = [
     check('qrCode').exists(),
     midWare.checkToken
 ];
-
+/*
 router.post('/api/user/verify', vrAuth, (req, res, next) => {
     try {
         validationResult(req).throw();
@@ -271,8 +362,9 @@ router.post('/api/user/verify', vrAuth, (req, res, next) => {
         res.status(400).json(err);
     }
 });
+*/
 
-
+/*
 router.get('/api/user/type', (req, res, next) => {
     try {
         db.query("SELECT * FROM user_type", (err, rows, result) => {
@@ -291,6 +383,7 @@ router.get('/api/user/type', (req, res, next) => {
         res.status(400).json(err);
     }
 });
+*/
 
 
 module.exports = router;

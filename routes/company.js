@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const config = require('../modules/secret');
 const db = require('../modules/dbConnect');
+const bcrypt = require('bcryptjs');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 
@@ -32,17 +35,16 @@ function logGen(length) {
        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
- }
+}
 
 
- let regValidate = [
+let regValidate = [
     check('email', 'Username Must Be an Email Address').isEmail(),
     check('name').exists(),
     check('password').exists(),
     check('description').exists(),
     check('phone').exists(),
     check('company_type').exists().isNumeric(),
-    check('siret').exists(),
     check('street_number').exists(),
     check('street_name').exists(),
     check('city').exists(),
@@ -54,9 +56,9 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
-        const logGen = logGen(10);
+        logGened = logGen(10);
         const regData = {
-            login: logGen,
+            login: logGened,
             name: req.body.name,
             hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
             salt: BCRYPT_SALT_ROUNDS,
@@ -64,10 +66,12 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
             description: req.body.description,
             phone: req.body.phone,
             registration_date: new Date(),
-            background_picture: "",
+            background_picture: '',
             logo_link: '',
-            paying_method: 0,
-            company_type: req.body.company_type
+            paying_method: null,
+            company_type: req.body.company_type,
+            verified: 0,
+            active: 0
         };
         db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
@@ -75,7 +79,7 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(410).jsonp("Your email address already registered... Try different email!");
+                    res.status(410).jsonp("Your email address is already registered !");
                 } else {
                     db.query("INSERT INTO company SET ?", [regData], (iErr, result) => {
                         if (iErr) {
@@ -83,16 +87,14 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
                             next(iErr);
                         } else {
                             const usrData = {
-                                companyId: req.body.result.insertId,
+                                company: result.insertId,
                                 phone: req.body.phone,
                                 siret: req.body.siret,
-                                longitude: "",
-                                latitude: '',
                                 street_number: req.body.street_number,
                                 street_name: req.body.street_name,
                                 city: req.body.city,
                                 country: req.body.country,
-                                billing_address: "0"
+                                billing_adress: 1
                             };
                             db.query("INSERT INTO company_location SET ?", [usrData], (iaErr, logResult) => {
                                 if (iaErr) {
@@ -109,6 +111,7 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
             }
         });
     } catch (err) {
+        console.log(err);
         res.status(400).json(err);
     }
 });
@@ -222,5 +225,226 @@ router.put('/api/company/profile/:companyId', updateProf, (req, res, next) => {
     }
 });
 
+
+let companyPass = [
+    check('password').exists(),
+    check('email').exists(),
+    midWare.checkToken
+];
+
+
+router.put('/api/company/password', companyPass, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        const BCRYPT_SALT_ROUNDS = 12;
+        let regData = {
+            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+        };
+
+        db.query("UPDATE company SET ? WHERE email = ?", [regData, req.body.email], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                db.query("SELECT * FROM company WHERE email = ?", [req.body.email], (iErr, iRows, iResult) => {
+                    if (iErr) {
+                        res.status(410).jsonp(iErr);
+                        next(iErr);
+                    } else {
+                        const token = jwt.sign({ id: iRows[0].id, login: iRows[0].login, name: iRows[0].name }, config.secret);
+                        res.status(200).jsonp({token: token});
+                    }
+                });
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+
+router.get('/api/company/location/:companyLocId', midWare.checkToken, (req, res, next) => {
+    try {
+        db.query("SELECT * FROM company_location INNER JOIN company ON company.id = company_location.companyId INNER JOIN company_location_pictures ON company_location_pictures.company_locationId = company_location.id WHERE company_location.id = ?", [req.decoded.id], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                db.query("SELECT * FROM schedule WHERE company_locationId = ?", [req.body.companyLocId], (sErr, sRows, sResult) => {
+                    if (sErr) {
+                        res.status(410).jsonp(sErr);
+                        next(sErr);
+                    } else {
+                        if (rows[0]) {
+                            companyInfo = {
+                                country: rows[0].country,
+                                city: rows[0].city,
+                                street_name: rows[0].street_name,
+                                street_number: rows[0].street_number,
+                                logo: rows[0].logo_link,
+                                background_picture: rows[0].background_picture,
+                                company_location_pictures: [rows[0].picture_link],
+                                schedule: [sRows]
+                            }
+                            res.status(200).jsonp(companyInfo);
+                        } else {
+                            res.status(404).jsonp("Company information not found!");
+                        }
+                    }
+                });
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+
+let cpyLocValidate = [
+    check('phone').exists(),
+    check('siret').exists(),
+    check('street_number').exists(),
+    check('street_name').exists(),
+    check('city').exists(),
+    check('country').exists()
+];
+
+
+router.post('/api/company/location', cpyLocValidate, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        const locData = {
+            companyId: req.decoded.id,
+            phone: req.body.phone,
+            siret: req.body.siret,
+            street_number: req.body.street_number,
+            street_name: req.body.street_name,
+            city: req.body.city,
+            country: req.body.country,
+            billing_address: 0
+        };
+        db.query("SELECT * FROM company_location WHERE BINARY siret = ?", [req.body.siret], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                if (rows[0]) {
+                    res.status(410).jsonp("Your SIRET number is already registered !");
+                } else {
+                    db.query("INSERT INTO company_location SET ?", [locData], (iErr, result) => {
+                        if (iErr) {
+                            res.status(410).jsonp(iErr);
+                            next(iErr);
+                        } else {
+                            res.status(200).jsonp("Company location added successfully!");
+                        }
+                    });
+                }
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+
+let upCpyLocValidate = [
+    check('phone').exists(),
+    check('street_number').exists(),
+    check('street_name').exists(),
+    check('city').exists(),
+    check('country').exists()
+];
+
+
+router.put('/api/company/location/:companyLocId', upCpyLocValidate, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        const locData = {
+            phone: req.body.phone,
+            street_number: req.body.street_number,
+            street_name: req.body.street_name,
+            city: req.body.city,
+            country: req.body.country
+        };
+
+        db.query("UPDATE company_location SET ? WHERE id = ?", [locData, req.params.companyLocId], (iErr, result) => {
+            if (iErr) {
+                res.status(410).jsonp(iErr);
+                next(iErr);
+            } else {
+                res.status(200).jsonp("Company location updated successfully!");
+            }
+        });
+
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+
+router.delete('/api/company/location/:companyLocId', midWare.checkToken, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+       
+        db.query("DELETE company_location WHERE id = ?", [req.params.companyLocId], (iErr, iResult) => {
+            if (iErr) {
+                res.status(410).jsonp(iErr);
+                next(iErr);
+            } else {
+                db.query("DELETE company_location_pictures WHERE company_locationId = ?", [req.params.companyLocId], (err, result) => {
+                    if (err) {
+                        res.status(410).jsonp(err);
+                        next(err);
+                    } else {
+                        res.status(200).jsonp("Company location deleted successfully!");
+                    }
+                });
+            }
+        });
+
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+
+
+router.post('/api/company/location/picture/:companyLocId', midWare.checkToken, (req, res, next) => {
+    try {
+        let locImg = {
+            company_locationId: req.params.companyLocId,
+            picture_link: req.body.picture
+        }
+        db.query("INSERT INTO company_location_pictures SET ?", [locImg], (err, result) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                res.status(200).jsonp("Company location picture added successfully!");
+            }
+        });
+
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+
+router.delete('/api/company/location/picture/:companyLocPicId', midWare.checkToken, (req, res, next) => {
+    try {
+        db.query("DELETE company_location_pictures WHERE id = ?", [req.params.companyLocPicId], (err, result) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                res.status(200).jsonp("Company location picture deleted successfully!");
+            }
+        });
+
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
 
 module.exports = router;
