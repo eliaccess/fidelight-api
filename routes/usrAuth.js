@@ -214,7 +214,7 @@ let logAuth = [
     check('password').exists()
 ];
 
-router.get('/api/user/login', logAuth, (req, res, next) => {
+router.post('/api/user/login', logAuth, (req, res, next) => {
     try {
         validationResult(req).throw();
         db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
@@ -223,7 +223,8 @@ router.get('/api/user/login', logAuth, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    if (bcrypt.compareSync(req.body.password, rows[0].hash_pwd)) {
+                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                    if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
                         const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
                         res.status(200).jsonp({token: token });
                     } else {
@@ -239,51 +240,49 @@ router.get('/api/user/login', logAuth, (req, res, next) => {
     }
 });
 
-/*
-router.post('/api/user/disconnect', midWare.checkToken, (req, res, next) => {
-    try {
-        res.status(200).jsonp("Token deleted successfully!");
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
-
 let passAuth = [
     check('password').exists(),
-    check('email', 'Username Must Be an Email Address').isEmail()
+    check('previous_password').exists()
 ];
 
-/*
-router.put('/api/user/password', passAuth, (req, res, next) => {
+router.put('/api/user/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
         let regData = {
             hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+            salt: BCRYPT_SALT_ROUNDS
         };
 
-        db.query("UPDATE user SET ? WHERE email = ?", [regData, req.body.email], (err, rows, results) => {
+        db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                db.query("SELECT * FROM user WHERE email = ?", [req.body.email], (iErr, iRows, iResult) => {
-                    if (iErr) {
-                        res.status(410).jsonp(iErr);
-                        next(iErr);
+                if (rows[0]) {
+                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                    if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
+                        db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
+                            if (iErr) {
+                                res.status(410).jsonp(iErr);
+                                next(iErr);
+                            } else {
+                                const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
+                                res.status(200).jsonp({token: token });
+                            }
+                        });
                     } else {
-                        const token = jwt.sign({ id: iRows[0].id, sName: iRows[0].surname, name:  iRows[0].name}, config.secret);
-                        res.status(200).jsonp({token: token});
+                        res.status(410).jsonp("Wrong old password!");
                     }
-                });
+                } else {
+                    res.status(410).jsonp("Authentication failed!");
+                }
             }
         });
     } catch (err) {
         res.status(400).json(err);
     }
 });
-*/
 
 router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
     try {
@@ -327,11 +326,58 @@ router.put('/api/user/profile', midWare.checkToken, (req, res, next) => {
     }
 });
 
-
+/*
 let vrAuth = [
     check('qrCode').exists(),
     midWare.checkToken
 ];
+*/
+
+/*
+router.post('/api/user/disconnect', midWare.checkToken, (req, res, next) => {
+    try {
+        res.status(200).jsonp("Token deleted successfully!");
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+*/
+
+/*
+let passAuth = [
+    check('password').exists(),
+    check('email', 'Username Must Be an Email Address').isEmail()
+];
+
+router.put('/api/user/password', passAuth, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        const BCRYPT_SALT_ROUNDS = 12;
+        let regData = {
+            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+        };
+
+        db.query("UPDATE user SET ? WHERE email = ?", [regData, req.body.email], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                db.query("SELECT * FROM user WHERE email = ?", [req.body.email], (iErr, iRows, iResult) => {
+                    if (iErr) {
+                        res.status(410).jsonp(iErr);
+                        next(iErr);
+                    } else {
+                        const token = jwt.sign({ id: iRows[0].id, sName: iRows[0].surname, name:  iRows[0].name}, config.secret);
+                        res.status(200).jsonp({token: token});
+                    }
+                });
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});*/
+
 /*
 router.post('/api/user/verify', vrAuth, (req, res, next) => {
     try {
