@@ -14,6 +14,7 @@ app.use(bodyParser.json());
 const usrAuth = require('./routes/usrAuth');
 const balance = require('./routes/balance');
 const transaction = require('./routes/transaction');
+const companyPoint = require('./routes/companyPoint');
 const company = require('./routes/company');
 const support = require('./routes/support');
 const search = require('./routes/search');
@@ -36,6 +37,7 @@ app.use(transaction);
 app.use(company);
 app.use(support);
 app.use(search);
+app.use(companyPoint);
 
 
 app.use('/', express.static(path.join(__dirname, 'public')));

@@ -76,7 +76,7 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
                                             next(err);
                                         }
                                         else{
-                                            const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name}, config.secret);
+                                            const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name, type: 'user'}, config.secret);
                                             res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
                                         }
                                     });
@@ -140,7 +140,6 @@ router.get('/api/user/register/gauth', tokenAuth, (req, res, next) => {
         res.status(400).json(err);
     }
 });
-
 
 router.get('/api/user/register/fauth', tokenAuth, (req, res, next) => {
     try {
@@ -225,7 +224,7 @@ router.post('/api/user/login', logAuth, (req, res, next) => {
                 if (rows[0]) {
                     hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
                     if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
-                        const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
+                        const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
                         res.status(200).jsonp({token: token });
                     } else {
                         res.status(410).jsonp("Authentication failed!");

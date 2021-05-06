@@ -12,18 +12,41 @@ let cpyPoint = [
 
 router.post('/api/company/points', cpyPoint, (req, res, next) => {
     try {
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
+
         validationResult(req).throw();
         const point = {
-            companyId: req.decoded.id,
-            points_earning_typeId: req.body.type,
+            company: req.decoded.id,
+            points_earning_type: req.body.type,
             value: req.body.value
         }
-        db.query("INSERT INTO points_earning SET ?", [point], (err, rows, result) => {
-            if (err) {
+        db.query("SELECT 1 FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows, result) => {
+            if(err){
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                res.status(200).jsonp("Point added successfully!");
+                if(rows[0]){
+                    db.query("UPDATE points_earning SET ? WHERE company = ?", [point, req.decoded.id], (err, rows, result) => {
+                        if (err) {
+                            res.status(410).jsonp(err);
+                            next(err);
+                        } else {
+                            res.status(200).jsonp("Point edited successfully!");
+                        }
+                    });
+                } else {
+                    db.query("INSERT INTO points_earning SET ?", [point], (err, rows, result) => {
+                        if (err) {
+                            res.status(410).jsonp(err);
+                            next(err);
+                        } else {
+                            res.status(200).jsonp("Point added successfully!");
+                        }
+                    });
+                }
             }
         });
     } catch (err) {
@@ -33,12 +56,12 @@ router.post('/api/company/points', cpyPoint, (req, res, next) => {
 
 router.get('/api/company/points/:companyId', midWare.checkToken, (req, res, next) => {
     try {
-        db.query("SELECT * points_earning WHERE companyId = ?", [req.params.companyId], (err, rows, result) => {
+        db.query("SELECT * FROM points_earning WHERE company = ?", [req.params.companyId], (err, rows, result) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                res.status(200).jsonp({points: rows});
+                res.status(200).jsonp({type: rows[0].points_earning_type, value:  rows[0].value });
             }
         });
     } catch (err) {
@@ -53,19 +76,43 @@ let upCpyPoint = [
     midWare.checkToken
 ];
 
-router.put('/api/company/points/:pointEarningId', upCpyPoint, (req, res, next) => {
+router.put('/api/company/points/', upCpyPoint, (req, res, next) => {
     try {
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
+
         validationResult(req).throw();
         const point = {
-            points_earning_typeId: req.body.type,
+            company: req.decoded.id,
+            points_earning_type: req.body.type,
             value: req.body.value
         }
-        db.query("INSERT INTO points_earning SET ?", [point], (err, rows, result) => {
-            if (err) {
+        db.query("SELECT 1 FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows, result) => {
+            if(err){
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                res.status(200).jsonp("Point added successfully!");
+                if(rows[0]){
+                    db.query("UPDATE points_earning SET ? WHERE company = ?", [point, req.decoded.id], (err, rows, result) => {
+                        if (err) {
+                            res.status(410).jsonp(err);
+                            next(err);
+                        } else {
+                            res.status(200).jsonp("Point edited successfully!");
+                        }
+                    });
+                } else {
+                    db.query("INSERT INTO points_earning SET ?", [point], (err, rows, result) => {
+                        if (err) {
+                            res.status(410).jsonp(err);
+                            next(err);
+                        } else {
+                            res.status(200).jsonp("Point added successfully!");
+                        }
+                    });
+                }
             }
         });
     } catch (err) {
@@ -73,11 +120,16 @@ router.put('/api/company/points/:pointEarningId', upCpyPoint, (req, res, next) =
     }
 });
 
-
-router.delete('/api/company/points/:pointEarningId', midWare.checkToken, (req, res, next) => {
+/*
+router.delete('/api/company/points/', midWare.checkToken, (req, res, next) => {
     try {
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
+
         validationResult(req).throw();
-        db.query("DELETE points_earning WHERE id = ?", [req.params.pointEarningId], (err, rows, result) => {
+        db.query("DELETE FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows, result) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
@@ -89,7 +141,7 @@ router.delete('/api/company/points/:pointEarningId', midWare.checkToken, (req, r
         res.status(400).json(err);
     }
 });
-
+*/
 
 
 router.get('/api/points/type', (req, res, next) => {

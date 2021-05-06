@@ -101,7 +101,7 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
                                     res.status(410).jsonp(iaErr);
                                     next(iaErr);
                                 } else {
-                                    const token = jwt.sign({ id: result.insertId, login: logGen, name: req.body.name }, config.secret);
+                                    const token = jwt.sign({ id: result.insertId, login: logGen, name: req.body.name, type: 'company' }, config.secret);
                                     res.status(200).jsonp({ login: logGen, token: token });
                                 }
                             });
@@ -116,13 +116,53 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
     }
 });
 
+/* TODO: Finish this part for unregistration (removing offers x balances) + images */
+router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        
+
+        db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else if (rows[0]){
+                if(rows[0].active == 0){
+                    res.status(410).jsonp("Inactive accounts can not be deleted!");
+                } else {
+                    db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+                        if(err){
+                            res.status(410).jsonp(err);
+                            next(err);
+                        }
+                        else{
+                            db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                                if(err){
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    res.status(200).jsonp("Account deleted successfully!");
+                                }
+                            });
+                        }
+                    });
+                }
+            } else {
+                res.status(410).jsonp("Authentication failed!");
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
 
 let tokenAuth = [
     check('email', 'Username Must Be an Email Address').isEmail(),
     check('password').exists()
 ];
 
-router.get('/api/company/login', tokenAuth, (req, res, next) => {
+router.post('/api/company/login', tokenAuth, (req, res, next) => {
     try {
         validationResult(req).throw();
 
@@ -132,8 +172,9 @@ router.get('/api/company/login', tokenAuth, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    if (bcrypt.compareSync(req.body.password, rows[0].hash_pwd)) {
-                        const token = jwt.sign({ id: rows[0].id, login: rows[0].login, name: rows[0].name }, config.secret);
+                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                    if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
+                        const token = jwt.sign({ id: rows[0].id, login: rows[0].login, name: rows[0].name, type: 'company' }, config.secret);
                         res.status(200).jsonp({token: token });
                     } else {
                         res.status(410).jsonp("Authentication failed!");
@@ -189,8 +230,13 @@ let updateProf = [
     midWare.checkToken
 ];
 
-router.put('/api/company/profile/:companyId', updateProf, (req, res, next) => {
+router.put('/api/company/profile/', updateProf, (req, res, next) => {
     try {
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
+
         validationResult(req).throw();
         companyInfo = {
             phone: req.body.phone,
@@ -205,12 +251,12 @@ router.put('/api/company/profile/:companyId', updateProf, (req, res, next) => {
             street_number: req.body.street_number
         };
 
-        db.query("UPDATE company SET ? WHERE id = ?", [companyInfo, req.params.companyId], (err, rows, results) => {
+        db.query("UPDATE company SET ? WHERE id = ?", [companyInfo, req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                db.query("UPDATE company_location SET ? WHERE companyId = ?", [cLocInfo, req.params.companyId], (err, rows, results) => {
+                db.query("UPDATE company_location SET ? WHERE company = ?", [cLocInfo, req.decoded.id], (err, rows, results) => {
                     if (err) {
                         res.status(410).jsonp(err);
                         next(err);
@@ -226,35 +272,47 @@ router.put('/api/company/profile/:companyId', updateProf, (req, res, next) => {
 });
 
 
-let companyPass = [
+let passAuth = [
     check('password').exists(),
-    check('email').exists(),
-    midWare.checkToken
+    check('previous_password').exists()
 ];
 
-
-router.put('/api/company/password', companyPass, (req, res, next) => {
+router.put('/api/company/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
         let regData = {
             hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+            salt: BCRYPT_SALT_ROUNDS
         };
 
-        db.query("UPDATE company SET ? WHERE email = ?", [regData, req.body.email], (err, rows, results) => {
+        db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                db.query("SELECT * FROM company WHERE email = ?", [req.body.email], (iErr, iRows, iResult) => {
-                    if (iErr) {
-                        res.status(410).jsonp(iErr);
-                        next(iErr);
+                if (rows[0]) {
+                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                    if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
+                        db.query("UPDATE company SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
+                            if (iErr) {
+                                res.status(410).jsonp(iErr);
+                                next(iErr);
+                            } else {
+                                const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
+                                res.status(200).jsonp({token: token });
+                            }
+                        });
                     } else {
-                        const token = jwt.sign({ id: iRows[0].id, login: iRows[0].login, name: iRows[0].name }, config.secret);
-                        res.status(200).jsonp({token: token});
+                        res.status(410).jsonp("Wrong old password!");
                     }
-                });
+                } else {
+                    res.status(410).jsonp("Authentication failed!");
+                }
             }
         });
     } catch (err) {
@@ -262,7 +320,7 @@ router.put('/api/company/password', companyPass, (req, res, next) => {
     }
 });
 
-
+/*
 router.get('/api/company/location/:companyLocId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM company_location INNER JOIN company ON company.id = company_location.companyId INNER JOIN company_location_pictures ON company_location_pictures.company_locationId = company_location.id WHERE company_location.id = ?", [req.decoded.id], (err, rows, results) => {
@@ -446,5 +504,5 @@ router.delete('/api/company/location/picture/:companyLocPicId', midWare.checkTok
         res.status(400).json(err);
     }
 });
-
+*/
 module.exports = router;
