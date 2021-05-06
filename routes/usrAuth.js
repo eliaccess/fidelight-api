@@ -246,6 +246,10 @@ let passAuth = [
 
 router.put('/api/user/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
         let regData = {
@@ -285,6 +289,10 @@ router.put('/api/user/password', passAuth, midWare.checkToken, (req, res, next) 
 
 router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
     try {
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
         db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
@@ -305,6 +313,10 @@ router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
 
 router.put('/api/user/profile', midWare.checkToken, (req, res, next) => {
     try {
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
         let usrData = {
             surname: req.body.surname,
             name: req.body.name,
