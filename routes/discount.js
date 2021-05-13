@@ -4,22 +4,26 @@ const db = require('../modules/dbConnect');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 
-router.get('/api/discount/type', (req, res, next) => {
+
+router.get('/api/discount/type', midWare.checkToken,(req, res, next) => {
     try {
-        db.query("SELECT * discount_type", (err, rows, result) => {
+        validationResult(req).throw();
+        db.query("SELECT * FROM discount_type", (err, rows, result) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
-                res.status(200).jsonp({types: rows});
+                if (rows[0]) {
+                    res.status(200).jsonp(rows);
+                } else {
+                    res.status(410).jsonp("Discount type not found!");
+                }
             }
         });
     } catch (err) {
         res.status(400).json(err);
     }
 });
-
-
 
 
 let disValidate = [
@@ -33,8 +37,15 @@ let disValidate = [
     check('value').exists(),
     midWare.checkToken
 ];
-router.post('/api/company/discount', disValidate, (req, res, next) => {
+
+router.post('/api/discount', disValidate, (req, res, next) => {
     try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
+
         const perDay = req.body.per_day;
         const dstInfo = {
             companyId: req.body.company,
