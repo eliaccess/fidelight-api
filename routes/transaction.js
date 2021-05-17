@@ -9,25 +9,24 @@ let traVry = [
 ];
 
 
-/* TODO: Verify if it works when a discount is in transaction */
 router.get('/api/transaction/:transId', traVry, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type == 'company') {
-            db.query("SELECT transaction.id AS id, user.name AS userName, user.surname AS userSurname, company.id AS companyId, company.name AS companyName, transaction.value AS value, transaction.date AS date FROM transaction INNER JOIN user ON transaction.user = user.id INNER JOIN company ON company.id = transaction.company WHERE transaction.company = ? AND transaction.id = ?", [req.decoded.id, req.params.transId], (err, rows, result) => {
+            db.query("SELECT transaction.id AS id, transaction.discount AS discount, user.name AS userName, user.surname AS userSurname, company.id AS companyId, company.name AS companyName, transaction.value AS value, transaction.date AS date FROM transaction INNER JOIN user ON transaction.user = user.id INNER JOIN company ON company.id = transaction.company WHERE transaction.company = ? AND transaction.id = ?", [req.decoded.id, req.params.transId], (err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp(err);
                     next(err);
                 } else {
                     if (rows[0]) {
                         if(rows[0].discount != null){
-                            db.query("SELECT * FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
+                            db.query("SELECT name FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
                                 if (err) {
                                     res.status(410).jsonp(err);
                                     next(err);
                                 } else {
                                     console.log(rows[0]);
-                                    res.status(200).jsonp({transaction: rows[0].id, discount_id: rows2[0].id, discount_name: rows2[0].name, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date});
+                                    res.status(200).jsonp({transaction: rows[0].id, discount_id: rows[0].discount, discount_name: rows2[0].name, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date});
                                 }
                             });
                         } else {
@@ -39,20 +38,20 @@ router.get('/api/transaction/:transId', traVry, (req, res, next) => {
                 }
             });
         } else if(req.decoded.type == 'user') {
-            db.query("SELECT transaction.id AS id, user.name AS userName, user.surname AS userSurname, company.id AS companyId, company.name AS companyName, transaction.value AS value, transaction.date AS date FROM transaction INNER JOIN user ON transaction.user = user.id INNER JOIN company ON company.id = transaction.company WHERE transaction.user = ? AND transaction.id = ?", [req.decoded.id, req.params.transId], (err, rows, result) => {
+            db.query("SELECT transaction.id AS id, transaction.discount AS discount, user.name AS userName, user.surname AS userSurname, company.id AS companyId, company.name AS companyName, transaction.value AS value, transaction.date AS date FROM transaction INNER JOIN user ON transaction.user = user.id INNER JOIN company ON company.id = transaction.company WHERE transaction.user = ? AND transaction.id = ?", [req.decoded.id, req.params.transId], (err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp(err);
                     next(err);
                 } else {
                     if (rows[0]) {
                         if(rows[0].discount != null){
-                            db.query("SELECT * FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
+                            db.query("SELECT name FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
                                 if (err) {
                                     res.status(410).jsonp(err);
                                     next(err);
                                 } else {
                                     console.log(rows[0]);
-                                    res.status(200).jsonp({transaction: rows[0].id, discount_id: rows2[0].id, discount_name: rows2[0].name, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date});
+                                    res.status(200).jsonp({transaction: rows[0].id, discount_id: rows[0].discount, discount_name: rows2[0].name, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date});
                                 }
                             });
                         } else {
@@ -120,7 +119,7 @@ router.get('/api/transaction', midWare.checkToken, (req, res, next) => {
 });
 
 /* TODO:? */
-router.delete('/api/company/discount/use/:transactionId', midWare.checkToken, (req, res, next) => {
+router.delete('/api/transaction/:transactionId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("DELETE FROM transaction WHERE discountId = ? AND seller = ? AND company = ?", [req.params.discountId], (err, result) => {
             if (err) {
