@@ -18,6 +18,7 @@ const companyPoint = require('./routes/companyPoint');
 const company = require('./routes/company');
 const support = require('./routes/support');
 const search = require('./routes/search');
+const discount = require('./routes/discount');
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -38,6 +39,7 @@ app.use(company);
 app.use(support);
 app.use(search);
 app.use(companyPoint);
+app.use(discount);
 
 
 app.use('/', express.static(path.join(__dirname, 'public')));

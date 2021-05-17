@@ -173,7 +173,6 @@ let usePts = [
 
 router.post('/api/company/points/use/', usePts, (req, res, next) => {
     try {
-        console.log("2");
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
             return 2;
