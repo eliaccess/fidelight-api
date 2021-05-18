@@ -42,6 +42,7 @@ app.use(support);
 app.use(search);
 app.use(companyPoint);
 app.use(discount);
+app.use('/images/companies', express.static("images/companies"));
 
 
 app.use('/', express.static(path.join(__dirname, 'public')));
