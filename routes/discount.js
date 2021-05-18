@@ -96,7 +96,7 @@ router.post('/api/discount', disValidate, (req, res, next) => {
                                 res.status(410).jsonp(vErr);
                                 next(vErr);
                             } else {
-                                res.status(200).jsonp({transaction: result.insertId});
+                                res.status(200).jsonp({discount: result.insertId});
                             }
                         });
                     }
@@ -340,7 +340,7 @@ let useDis = [
     midWare.checkToken
 ];
 
-/* Add nb used +1 left */
+
 router.post('/api/discount/use/', useDis, (req, res, next) => {
     try {
         /* steps :

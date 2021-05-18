@@ -118,9 +118,90 @@ router.get('/api/transaction', midWare.checkToken, (req, res, next) => {
     }
 });
 
-/* TODO:? */
+
 router.delete('/api/transaction/:transactionId', midWare.checkToken, (req, res, next) => {
     try {
+        /* Steps :
+        - see if transaction exists
+        - see if the transaction was created less than 10 minutes earlier
+        - Check if it was points giving or discount usage
+        - get the points back / remove the points from the wallet of the user
+        - if it was a discount, decrement the times_used amount 
+        - delete the transaction */
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
+
+        validationResult(req).throw();
+
+        db.query("SELECT date, value, discount, user FROM transaction WHERE id = ? AND company = ?", [req.params.transactionId, req.decoded.id], (err, rows,result) => {
+            /* Checking if the transaction exists */
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else if (rows[0]){
+                actual_time = new Date();
+                diffMins = parseInt((actual_time - rows[0].date) / (1000 * 60) % 60);
+                /* Checking if the transaction is less than 10 minutes old */
+                if (diffMins >= 0 && diffMins < 10){
+                    /* Checking if discount usage or giving points */
+                    if(rows[0].discount){
+                        /* Giving back points on user balance */
+                        db.query("UPDATE balance SET points = points + ? WHERE user = ? AND company = ?", [rows[0].value, rows[0].user, req.decoded.id], (err, result2) => {
+                            if (err) {
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else if (result2.affectedRows){
+                                /* Decreasing times_used from discount */
+                                db.query("UPDATE discount SET times_used = times_used - 1 WHERE id = ? AND company = ? AND times_used >= 0", [rows[0].discount, req.decoded.id], (err, result3) => {
+                                    if (err) {
+                                        res.status(410).jsonp(err);
+                                        next(err);
+                                    } else {
+                                        /* Deleting the transaction */
+                                        db.query("DELETE FROM transaction WHERE id = ? AND company = ?", [req.params.transactionId, req.decoded.id], (err, result2) => {
+                                            if (err) {
+                                                res.status(410).jsonp(err);
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp('Transaction deleted');
+                                            }
+                                        });
+                                    }
+                                });
+                            } else {
+                                res.status(403).jsonp('Error when trying to give points back to the user');
+                            }
+                        });
+                    } else {
+                        /* Removing points from balance of the user if balance allows it */
+                        db.query("UPDATE balance SET points = points - ? WHERE user = ? AND company = ? AND points >= ?", [rows[0].value, rows[0].user, req.decoded.id, rows[0].value], (err, result2) => {
+                            if (err) {
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else if (result2.affectedRows){
+                                /* Deleting the transaction */
+                                db.query("DELETE FROM transaction WHERE id = ? AND company = ?", [req.params.transactionId, req.decoded.id], (err, result2) => {
+                                    if (err) {
+                                        res.status(410).jsonp(err);
+                                        next(err);
+                                    } else {
+                                        res.status(200).jsonp('Transaction deleted');
+                                    }
+                                });
+                            } else {
+                                res.status(403).jsonp('User does not have enough points to refund');
+                            }
+                        });
+                    }
+                } else {
+                    res.status(403).jsonp('Transaction expired (more than 10 minutes old)');
+                }
+            } else {
+                res.status(403).jsonp('Transaction does not exist');
+            }
+        });/*
         db.query("DELETE FROM transaction WHERE discountId = ? AND seller = ? AND company = ?", [req.params.discountId], (err, result) => {
             if (err) {
                 res.status(410).jsonp(err);
@@ -142,7 +223,7 @@ router.delete('/api/transaction/:transactionId', midWare.checkToken, (req, res, 
                     }
                 });
             }
-        });
+        });*/
     } catch (err) {
         res.status(400).json(err);
     }
