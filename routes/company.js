@@ -345,7 +345,7 @@ router.delete(('/api/company/background/'), midWare.checkToken, (req, res, next)
     }
 });
 
-
+/* IF ADDING PICTURES IN DISCOUNTS THEN NEEDS TO DELETE THEM NOW */
 router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
