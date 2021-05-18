@@ -6,6 +6,36 @@ const db = require('../modules/dbConnect');
 const bcrypt = require('bcryptjs');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
+const fs = require('fs');
+const multer = require("multer");
+const storage = multer.diskStorage({
+    destination: function(req, file, cb){
+        cb(null, 'images/companies/');
+    },
+    filename: function(req, file, cb){
+        cb(null, 'company_' + new Date().toISOString() + '_' + file.originalname);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png'){
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    limits: {
+      fileSize: 1024 * 1024 * 5
+    },
+    onError : function(err, next) {
+        console.log('error', err);
+        next(err);
+    },
+    fileFilter: fileFilter
+});
 
 router.get('/api/company/type', midWare.checkToken, (req, res, next) => {
     try {
@@ -51,28 +81,10 @@ let regValidate = [
     check('country').exists()
 ];
 
-
 router.post('/api/company/register', regValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
-        const BCRYPT_SALT_ROUNDS = 12;
-        logGened = logGen(10);
-        const regData = {
-            login: logGened,
-            name: req.body.name,
-            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
-            salt: BCRYPT_SALT_ROUNDS,
-            email: req.body.email,
-            description: req.body.description,
-            phone: req.body.phone,
-            registration_date: new Date(),
-            background_picture: '',
-            logo_link: '',
-            paying_method: null,
-            company_type: req.body.company_type,
-            verified: 0,
-            active: 0
-        };
+        
         db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
@@ -81,6 +93,25 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
                 if (rows[0]) {
                     res.status(410).jsonp("Your email address is already registered !");
                 } else {
+                    const BCRYPT_SALT_ROUNDS = 12;
+                    logGened = logGen(10);                    
+                    
+                    const regData = {
+                        login: logGened,
+                        name: req.body.name,
+                        hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+                        salt: BCRYPT_SALT_ROUNDS,
+                        email: req.body.email,
+                        description: req.body.description,
+                        phone: req.body.phone,
+                        registration_date: new Date(),
+                        background_picture: '',
+                        logo_link: '',
+                        paying_method: null,
+                        company_type: req.body.company_type,
+                        verified: 0,
+                        active: 0
+                    };
                     db.query("INSERT INTO company SET ?", [regData], (iErr, result) => {
                         if (iErr) {
                             res.status(410).jsonp(iErr);
@@ -101,8 +132,8 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
                                     res.status(410).jsonp(iaErr);
                                     next(iaErr);
                                 } else {
-                                    const token = jwt.sign({ id: result.insertId, login: logGen, name: req.body.name, type: 'company' }, config.secret);
-                                    res.status(200).jsonp({ login: logGen, token: token });
+                                    const token = jwt.sign({ id: result.insertId, login: logGened, name: req.body.name, type: 'company' }, config.secret);
+                                    res.status(200).jsonp({ login: logGened, token: token, id: result.insertId });
                                 }
                             });
                         }
@@ -116,7 +147,205 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
     }
 });
 
-/* TODO: Finish this part for unregistration : images (locations + background + logo) */
+
+router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            if(req.file){
+                /* checking of the company exists */
+                db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                    if (err) {
+                        res.status(410).jsonp(err);
+                        next(err);
+                    } else if (rows[0]){
+                        /* if a logo already exists, then we replace it, else we just create one */
+                        if(rows[0].logo_link){
+                            fs.unlink(rows[0].logo_link, function(err, rows){
+                                if(err && err.code !== "ENOENT"){
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    db.query("UPDATE company SET logo_link = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
+                                        if (err) {
+                                            res.status(410).jsonp(err);
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp("Logo added successfully!");
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            db.query("UPDATE company SET logo_link = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
+                                if (err) {
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    res.status(200).jsonp('Logo added successfully!');
+                                }
+                            });
+                        }
+                    } else {
+                        res.status(410).jsonp('Company does not exist!');
+                    }
+                });
+            } else {
+                res.status(400).jsonp('The file needs to be PNG, JPEG or JPG');
+            }
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+router.delete(('/api/company/logo/'), midWare.checkToken, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else if (rows[0]){
+                    /* if a logo already exists, then we replace it, else we just create one */
+                    if(rows[0].logo_link){
+                        fs.unlink(rows[0].logo_link, function(err, rows){
+                            if(err && err.code !== "ENOENT"){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else {
+                                db.query("UPDATE company SET logo_link = '' WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                                    if (err) {
+                                        res.status(410).jsonp(err);
+                                        next(err);
+                                    } else {
+                                        res.status(200).jsonp('Logo deleted successfully!');
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        res.status(200).jsonp('No logo to delete !');
+                    }
+                } else {
+                    res.status(410).jsonp('Company does not exist!');
+                }
+            });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+
+router.post(('/api/company/background/'), upload.single('background_picture'), midWare.checkToken, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            if(req.file){
+                /* checking of the company exists */
+                db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                    if (err) {
+                        res.status(410).jsonp(err);
+                        next(err);
+                    } else if (rows[0]){
+                        /* if a background picture already exists, then we replace it, else we just create one */
+                        if(rows[0].background_picture){
+                            fs.unlink(rows[0].background_picture, function(err, rows){
+                                if(err && err.code !== "ENOENT"){
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    db.query("UPDATE company SET background_picture = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
+                                        if (err) {
+                                            res.status(410).jsonp(err);
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp("Background picture added successfully!");
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            db.query("UPDATE company SET background_picture = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
+                                if (err) {
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    res.status(200).jsonp("Background picture added successfully!");
+                                }
+                            });
+                        }
+                    } else {
+                        res.status(410).jsonp('Company does not exist!');
+                    }
+                });
+            } else {
+                res.status(400).jsonp('The file needs to be PNG, JPEG or JPG');
+            }
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+router.delete(('/api/company/background/'), midWare.checkToken, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else if (rows[0]){
+                    /* if a background picture already exists, then we replace it, else we just create one */
+                    if(rows[0].background_picture){
+                        fs.unlink(rows[0].background_picture, function(err, rows){
+                            if(err && err.code !== "ENOENT"){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else {
+                                db.query("UPDATE company SET background_picture = '' WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                                    if (err) {
+                                        res.status(410).jsonp(err);
+                                        next(err);
+                                    } else {
+                                        res.status(200).jsonp('Background picture deleted successfully!');
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        res.status(200).jsonp('No background picture to delete !');
+                    }
+                } else {
+                    res.status(410).jsonp('Company does not exist!');
+                }
+            });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+
 router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
@@ -132,6 +361,21 @@ router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
                     if(rows[0].active == 0){
                         res.status(410).jsonp("Inactive accounts can not be deleted!");
                     } else {
+                        /* Deleting the logo and background picture of the company */
+                        fs.unlink(rows[0].logo_link, function(err, rows){
+                            if(err && err.code !== "ENOENT"){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            }
+                        });
+
+                        fs.unlink(rows[0].background_picture, function(err, rows){
+                            if(err && err.code !== "ENOENT"){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            }
+                        });
+
                         /* Deleting company private information */
                         db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
                             if(err){
@@ -147,11 +391,30 @@ router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
                                     } else {
                                         if(rows2){
                                             rows2.forEach(line => {
-                                                /* TODO: Add picture deleting in future updates */
-                                                db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows, results) => {
+                                                /* Getting every picture link to delete them */
+                                                db.query("SELECT picture_link FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows3, results) => {
                                                     if(err){
                                                         res.status(410).jsonp(err);
                                                         next(err);
+                                                    } else {
+                                                        if(rows3){
+                                                            rows3.forEach(picture => {
+                                                                /* Deleting every picture */
+                                                                fs.unlink(picture.link_picture, function(err, rows){
+                                                                    if(err && err.code !== "ENOENT"){
+                                                                        res.status(410).jsonp(err);
+                                                                        next(err);
+                                                                    } else {
+                                                                        db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows, results) => {
+                                                                            if(err){
+                                                                                res.status(410).jsonp(err);
+                                                                                next(err);
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                });
+                                                            });
+                                                        }
                                                     }
                                                 });
                                             });

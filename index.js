@@ -3,12 +3,14 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const app = express();
+const multer = require("multer");
 
 //const {enableProdMode} = require('@angular/core');
 
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
 
 /* Include routes */
 const usrAuth = require('./routes/usrAuth');
@@ -31,7 +33,7 @@ app.use((req, res, next) => {
 });
 
 
-/* User Request */
+/* Addings routes to app */
 app.use(usrAuth);
 app.use(balance);
 app.use(transaction);
