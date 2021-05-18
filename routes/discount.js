@@ -345,6 +345,7 @@ router.post('/api/discount/use/', useDis, (req, res, next) => {
     try {
         /* steps :
         - verifying that the discount exists, and is active
+        - verify the per_day and the actual day to see if it is active today
         - verify the amount of points the user has and compare it to the discount's cost
         - edit the balance of the user
         - create a transaction
@@ -368,98 +369,58 @@ router.post('/api/discount/use/', useDis, (req, res, next) => {
                 next(err);
             } else if (rows[0]){
                 /* Getting the cost and value of the discount */
-                db.query("SELECT discount.cost, discount_value.value FROM discount INNER JOIN discount_value ON discount_value.discount = discount.id WHERE (discount.id = ?) AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.nb_max > discount.times_used) AND (discount.active = 1)", [req.body.discount, date_today, date_today], (err, rows2, results2) => {
+                db.query("SELECT discount.cost AS cost, discount.per_day AS per_day, discount_value.value AS value, discount_repetition.monday AS monday, discount_repetition.tuesday AS tuesday, discount_repetition.wednesday AS wednesday, discount_repetition.thursday AS thursday, discount_repetition.friday AS friday, discount_repetition.saturday AS saturday, discount_repetition.sunday AS sunday FROM discount INNER JOIN discount_value ON discount_value.discount = discount.id LEFT JOIN discount_repetition ON discount_repetition.discount = discount.id WHERE (discount.id = ?) AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.nb_max > discount.times_used) AND (discount.active = 1)", [req.body.discount, date_today, date_today], (err, rows2, results2) => {
                     if (err) {
                         res.status(410).jsonp(err);
                         next(err);
                     } else if (rows2[0]){
-                        /* Verifying if the user has a wallet in that company, if not then creating it */
-                        db.query("SELECT points FROM balance WHERE company = ? AND user = ?", [req.decoded.id, userId], (err, rows3, results3) => {
-                            if(err){
-                                res.status(410).jsonp(err);
-                                next(err);
-                            } else {
-                                /* if it exists : checking the points amount */
-                                if(rows3[0]){
-                                    if(rows3[0].points - rows2[0].cost >= 0){
-                                        let blcData = {
-                                            points: (rows3[0].points - rows2[0].cost)
-                                        };
-                                        db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows4, results4) => {
-                                            if(err){
-                                                res.status(410).jsonp(err);
-                                                next(err);
-                                            } else {
-                                                /* Creating the transaction */
-                                                let trData = {
-                                                    user: userId,
-                                                    value: rows2[0].cost,
-                                                    seller: null,
-                                                    discount: req.body.discount,
-                                                    date: new Date(),
-                                                    company: req.decoded.id,
-                                                    nb_used: 1,
-                                                    money_saved: 0,
-                                                };
-
-                                                db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
-                                                    if (err) {
-                                                        res.status(410).jsonp(err);
-                                                        next(err);
-                                                    } else {
-                                                        db.query("UPDATE discount SET times_used = times_used + 1 WHERE id = ?", [req.body.discount], (err, rows2, results) => {
-                                                            if (err) {
-                                                                res.status(410).jsonp(err);
-                                                                next(err);
-                                                            } else {
-                                                                
-                                                                res.status(200).jsonp({transaction: rows.insertId});
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        });
+                        /* Verifying if the discount is available today if per_day is active */
+                        if(rows2[0].per_day){
+                            var week = {0: rows2[0].sunday, 1: rows2[0].monday, 2: rows2[0].tuesday, 3: rows2[0].wednesday, 4: rows2[0].thursday, 5: rows2[0].friday, 6: rows2[0].saturday};
+                            if(week[date_today.getDay()]){
+                                /* Verifying if the user has a wallet in that company, if not then creating it */
+                                db.query("SELECT points FROM balance WHERE company = ? AND user = ?", [req.decoded.id, userId], (err, rows3, results3) => {
+                                    if(err){
+                                        res.status(410).jsonp(err);
+                                        next(err);
                                     } else {
-                                        res.status(409).jsonp("Not enough points on the virtual card to do this action.");
-                                    }
-                                } else {
-                                    /* Creating the wallet, and if the discount is free then the user can use the offer (0 points on the balance by default) */
-                                    let blcData = {
-                                        user: userId,
-                                        company: req.decoded.id,
-                                        points: 0
-                                    };
-                                    db.query("INSERT INTO balance SET ?", blcData, (err, rows3, results3) => {
-                                        if(err){
-                                            res.status(410).jsonp(err);
-                                            next(err);
-                                        } else {
-                                            if(rows2[0].cost == 0){ 
-                                                /* Creating the transaction */
-                                                let trData = {
-                                                    user: userId,
-                                                    value: rows2[0].cost,
-                                                    seller: null,
-                                                    discount: req.body.discount,
-                                                    date: new Date(),
-                                                    company: req.decoded.id,
-                                                    nb_used: 1,
-                                                    money_saved: 0,
+                                        /* if it exists : checking the points amount */
+                                        if(rows3[0]){
+                                            if(rows3[0].points - rows2[0].cost >= 0){
+                                                let blcData = {
+                                                    points: (rows3[0].points - rows2[0].cost)
                                                 };
-
-                                                db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
-                                                    if (err) {
+                                                db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows4, results4) => {
+                                                    if(err){
                                                         res.status(410).jsonp(err);
                                                         next(err);
                                                     } else {
-                                                        db.query("UPDATE discount SET times_used = times_used + 1 WHERE id = ?", [req.body.discount], (err, rows2, results) => {
+                                                        /* Creating the transaction */
+                                                        let trData = {
+                                                            user: userId,
+                                                            value: rows2[0].cost,
+                                                            seller: null,
+                                                            discount: req.body.discount,
+                                                            date: new Date(),
+                                                            company: req.decoded.id,
+                                                            nb_used: 1,
+                                                            money_saved: 0,
+                                                        };
+
+                                                        db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
                                                             if (err) {
                                                                 res.status(410).jsonp(err);
                                                                 next(err);
                                                             } else {
-                                                                
-                                                                res.status(200).jsonp({transaction: rows.insertId});
+                                                                db.query("UPDATE discount SET times_used = times_used + 1 WHERE id = ?", [req.body.discount], (err, rows2, results) => {
+                                                                    if (err) {
+                                                                        res.status(410).jsonp(err);
+                                                                        next(err);
+                                                                    } else {
+                                                                        
+                                                                        res.status(200).jsonp({transaction: rows.insertId});
+                                                                    }
+                                                                });
                                                             }
                                                         });
                                                     }
@@ -467,20 +428,166 @@ router.post('/api/discount/use/', useDis, (req, res, next) => {
                                             } else {
                                                 res.status(409).jsonp("Not enough points on the virtual card to do this action.");
                                             }
+                                        } else {
+                                            /* Creating the wallet, and if the discount is free then the user can use the offer (0 points on the balance by default) */
+                                            let blcData = {
+                                                user: userId,
+                                                company: req.decoded.id,
+                                                points: 0
+                                            };
+                                            db.query("INSERT INTO balance SET ?", blcData, (err, rows3, results3) => {
+                                                if(err){
+                                                    res.status(410).jsonp(err);
+                                                    next(err);
+                                                } else {
+                                                    if(rows2[0].cost == 0){ 
+                                                        /* Creating the transaction */
+                                                        let trData = {
+                                                            user: userId,
+                                                            value: rows2[0].cost,
+                                                            seller: null,
+                                                            discount: req.body.discount,
+                                                            date: new Date(),
+                                                            company: req.decoded.id,
+                                                            nb_used: 1,
+                                                            money_saved: 0,
+                                                        };
+
+                                                        db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
+                                                            if (err) {
+                                                                res.status(410).jsonp(err);
+                                                                next(err);
+                                                            } else {
+                                                                db.query("UPDATE discount SET times_used = times_used + 1 WHERE id = ?", [req.body.discount], (err, rows2, results) => {
+                                                                    if (err) {
+                                                                        res.status(410).jsonp(err);
+                                                                        next(err);
+                                                                    } else {
+                                                                        
+                                                                        res.status(200).jsonp({transaction: rows.insertId});
+                                                                    }
+                                                                });
+                                                            }
+                                                        });
+                                                    } else {
+                                                        res.status(409).jsonp("Not enough points on the virtual card to do this action.");
+                                                    }
+                                                }
+                                            });
                                         }
-                                    });
-                                }
+                                    }
+                                });
+                            } else {
+                                res.status(403).jsonp('This discount is not available today.');
                             }
-                        });
+                        } else {
+                            /* Verifying if the user has a wallet in that company, if not then creating it */
+                            db.query("SELECT points FROM balance WHERE company = ? AND user = ?", [req.decoded.id, userId], (err, rows3, results3) => {
+                                if(err){
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    /* if it exists : checking the points amount */
+                                    if(rows3[0]){
+                                        if(rows3[0].points - rows2[0].cost >= 0){
+                                            let blcData = {
+                                                points: (rows3[0].points - rows2[0].cost)
+                                            };
+                                            db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows4, results4) => {
+                                                if(err){
+                                                    res.status(410).jsonp(err);
+                                                    next(err);
+                                                } else {
+                                                    /* Creating the transaction */
+                                                    let trData = {
+                                                        user: userId,
+                                                        value: rows2[0].cost,
+                                                        seller: null,
+                                                        discount: req.body.discount,
+                                                        date: new Date(),
+                                                        company: req.decoded.id,
+                                                        nb_used: 1,
+                                                        money_saved: 0,
+                                                    };
+
+                                                    db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
+                                                        if (err) {
+                                                            res.status(410).jsonp(err);
+                                                            next(err);
+                                                        } else {
+                                                            db.query("UPDATE discount SET times_used = times_used + 1 WHERE id = ?", [req.body.discount], (err, rows2, results) => {
+                                                                if (err) {
+                                                                    res.status(410).jsonp(err);
+                                                                    next(err);
+                                                                } else {
+                                                                    
+                                                                    res.status(200).jsonp({transaction: rows.insertId});
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        } else {
+                                            res.status(409).jsonp("Not enough points on the virtual card to do this action.");
+                                        }
+                                    } else {
+                                        /* Creating the wallet, and if the discount is free then the user can use the offer (0 points on the balance by default) */
+                                        let blcData = {
+                                            user: userId,
+                                            company: req.decoded.id,
+                                            points: 0
+                                        };
+                                        db.query("INSERT INTO balance SET ?", blcData, (err, rows3, results3) => {
+                                            if(err){
+                                                res.status(410).jsonp(err);
+                                                next(err);
+                                            } else {
+                                                if(rows2[0].cost == 0){ 
+                                                    /* Creating the transaction */
+                                                    let trData = {
+                                                        user: userId,
+                                                        value: rows2[0].cost,
+                                                        seller: null,
+                                                        discount: req.body.discount,
+                                                        date: new Date(),
+                                                        company: req.decoded.id,
+                                                        nb_used: 1,
+                                                        money_saved: 0,
+                                                    };
+
+                                                    db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
+                                                        if (err) {
+                                                            res.status(410).jsonp(err);
+                                                            next(err);
+                                                        } else {
+                                                            db.query("UPDATE discount SET times_used = times_used + 1 WHERE id = ?", [req.body.discount], (err, rows2, results) => {
+                                                                if (err) {
+                                                                    res.status(410).jsonp(err);
+                                                                    next(err);
+                                                                } else {
+                                                                    
+                                                                    res.status(200).jsonp({transaction: rows.insertId});
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                } else {
+                                                    res.status(409).jsonp("Not enough points on the virtual card to do this action.");
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
                     } else {
                         console.log(rows2[0]);
                         res.status(403).jsonp('Discount does not exist, expired or max amount was reached.');
-                        return 2;
                     }
                 });
             } else {
                 res.status(403).jsonp('User key does not exist');
-                return 2;
             }
         });
 
