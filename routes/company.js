@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 
-router.get('/api/company/type', (req, res, next) => {
+router.get('/api/company/type', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM company_type", (err, rows, result) => {
             if (err) {
@@ -116,41 +116,117 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
     }
 });
 
-/* TODO: Finish this part for unregistration (removing offers x balances) + images */
+/* TODO: Finish this part for unregistration : images (locations + background + logo) */
 router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
-        
-
-        db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else if (rows[0]){
-                if(rows[0].active == 0){
-                    res.status(410).jsonp("Inactive accounts can not be deleted!");
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else if (rows[0]){
+                    if(rows[0].active == 0){
+                        res.status(410).jsonp("Inactive accounts can not be deleted!");
+                    } else {
+                        /* Deleting company private information */
+                        db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            }
+                            else{
+                                /* Deleting locations photo locations */
+                                db.query("SELECT id FROM company_location WHERE company = ?", [req.decoded.id], (err, rows2, results) => {
+                                    if(err){
+                                        res.status(410).jsonp(err);
+                                        next(err);
+                                    } else {
+                                        if(rows2){
+                                            rows2.forEach(line => {
+                                                /* TODO: Add picture deleting in future updates */
+                                                db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows, results) => {
+                                                    if(err){
+                                                        res.status(410).jsonp(err);
+                                                        next(err);
+                                                    }
+                                                });
+                                            });
+                                        }
+                                        
+                                        /* removing company location private information */
+                                        db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                                            if(err){
+                                                res.status(410).jsonp(err);
+                                                next(err);
+                                            } else {
+                                                /* Deleting users balances in that company */
+                                                db.query("DELETE FROM balance WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                                                    if(err){
+                                                        res.status(410).jsonp(err);
+                                                        next(err);
+                                                    } else {
+                                                        /* Deleting discounts and discounts information from the company */
+                                                        db.query("SELECT * FROM discount WHERE company = ? AND active = 1", [req.decoded.id], (err, results) => {
+                                                            if(err){
+                                                                res.status(410).jsonp(err);
+                                                                next(err);
+                                                            } else {
+                                                                if(results[0]){
+                                                                    results.forEach(element => {
+                                                                        db.query("DELETE FROM discount_repetition WHERE discount = ?", [element.id], (err, result) => {
+                                                                            if (err) {
+                                                                                res.status(410).jsonp(err);
+                                                                                next(err);
+                                                                            } else {
+                                                                                db.query("DELETE FROM discount_value WHERE discount = ?", [element.id], (err, result) => {
+                                                                                    if (err) {
+                                                                                        res.status(410).jsonp(err);
+                                                                                        next(err);
+                                                                                    } else {
+                                                                                        const dstInfo = {
+                                                                                            description: "",
+                                                                                            picture_link: "",
+                                                                                            expiration_date: new Date(),
+                                                                                            per_day: 0,
+                                                                                            active: 0
+                                                                                        }
+                                                                                        db.query("UPDATE discount SET ? WHERE id = ?", [dstInfo, element.id], (err, result) => {
+                                                                                            if (err) {
+                                                                                                res.status(410).jsonp(err);
+                                                                                                next(err);
+                                                                                            } else {
+                                                                                                res.status(200).jsonp("Account deleted successfully!");
+                                                                                            }
+                                                                                        });
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    });
+                                                                } else {
+                                                                    res.status(200).jsonp("Account deleted successfully!");
+                                                                    return 2;
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
                 } else {
-                    db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
-                        if(err){
-                            res.status(410).jsonp(err);
-                            next(err);
-                        }
-                        else{
-                            db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], (err, rows, results) => {
-                                if(err){
-                                    res.status(410).jsonp(err);
-                                    next(err);
-                                } else {
-                                    res.status(200).jsonp("Account deleted successfully!");
-                                }
-                            });
-                        }
-                    });
+                    res.status(410).jsonp("Authentication failed!");
                 }
-            } else {
-                res.status(410).jsonp("Authentication failed!");
-            }
-        });
+            });
+        }
     } catch (err) {
         res.status(400).json(err);
     }
@@ -189,7 +265,7 @@ router.post('/api/company/login', tokenAuth, (req, res, next) => {
     }
 });
 
-
+/* TODO : Add inner join to get the adress */
 router.get('/api/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
@@ -232,40 +308,41 @@ let updateProf = [
 
 router.put('/api/company/profile/', updateProf, (req, res, next) => {
     try {
+        validationResult(req).throw();
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
             return 2;
+        } else {
+            validationResult(req).throw();
+            companyInfo = {
+                phone: req.body.phone,
+                email: req.body.email,
+                description: req.body.description,
+            };
+
+            cLocInfo = {
+                country: req.body.country,
+                city: req.body.city,
+                street_name: req.body.street_name,
+                street_number: req.body.street_number
+            };
+
+            db.query("UPDATE company SET ? WHERE id = ?", [companyInfo, req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else {
+                    db.query("UPDATE company_location SET ? WHERE company = ?", [cLocInfo, req.decoded.id], (err, rows, results) => {
+                        if (err) {
+                            res.status(410).jsonp(err);
+                            next(err);
+                        } else {
+                            res.status(200).jsonp("Company profile updated successfully!");
+                        }
+                    });
+                }
+            });
         }
-
-        validationResult(req).throw();
-        companyInfo = {
-            phone: req.body.phone,
-            email: req.body.email,
-            description: req.body.description,
-        };
-
-        cLocInfo = {
-            country: req.body.country,
-            city: req.body.city,
-            street_name: req.body.street_name,
-            street_number: req.body.street_number
-        };
-
-        db.query("UPDATE company SET ? WHERE id = ?", [companyInfo, req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                db.query("UPDATE company_location SET ? WHERE company = ?", [cLocInfo, req.decoded.id], (err, rows, results) => {
-                    if (err) {
-                        res.status(410).jsonp(err);
-                        next(err);
-                    } else {
-                        res.status(200).jsonp("Company profile updated successfully!");
-                    }
-                });
-            }
-        });
     } catch (err) {
         res.status(400).json(err);
     }
@@ -279,42 +356,43 @@ let passAuth = [
 
 router.put('/api/company/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
+        validationResult(req).throw();
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
             return 2;
-        }
-        validationResult(req).throw();
-        const BCRYPT_SALT_ROUNDS = 12;
-        let regData = {
-            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
-            salt: BCRYPT_SALT_ROUNDS
-        };
+        } else {
+            const BCRYPT_SALT_ROUNDS = 12;
+            let regData = {
+                hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+                salt: BCRYPT_SALT_ROUNDS
+            };
 
-        db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                    if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
-                        db.query("UPDATE company SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
-                            if (iErr) {
-                                res.status(410).jsonp(iErr);
-                                next(iErr);
-                            } else {
-                                const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
-                                res.status(200).jsonp({token: token });
-                            }
-                        });
-                    } else {
-                        res.status(410).jsonp("Wrong old password!");
-                    }
+            db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
                 } else {
-                    res.status(410).jsonp("Authentication failed!");
+                    if (rows[0]) {
+                        hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                        if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
+                            db.query("UPDATE company SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
+                                if (iErr) {
+                                    res.status(410).jsonp(iErr);
+                                    next(iErr);
+                                } else {
+                                    const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
+                                    res.status(200).jsonp({token: token });
+                                }
+                            });
+                        } else {
+                            res.status(410).jsonp("Wrong old password!");
+                        }
+                    } else {
+                        res.status(410).jsonp("Authentication failed!");
+                    }
                 }
-            }
-        });
+            });
+        }
     } catch (err) {
         res.status(400).json(err);
     }

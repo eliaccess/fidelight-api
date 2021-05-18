@@ -44,65 +44,65 @@ router.post('/api/discount', disValidate, (req, res, next) => {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
             return 2;
-        }
-
-        const perDay = req.body.per_day;
-        const dstInfo = {
-            company: req.decoded.id,
-            discount_type: req.body.discount_type,
-            times_used: 0,
-            cost: req.body.cost,
-            name: req.body.name,
-            description: req.body.description,
-            picture_link: "",
-            product: req.body.product,
-            nb_max: req.body.nb_max,
-            creation_date: new Date(),
-            start_date: (req.body.start_date) ? req.body.start_date : new Date,
-            expiration_date: req.body.expiration_date,
-            //per_day: (Array.isArray(perDay)) ? 1 : 0,
-            per_day: 1,
-            active: 1
-        }
-
-        db.query("INSERT INTO discount SET ?", [dstInfo], (err, result) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                const dstRpt = {
-                    discount: result.insertId,
-                    monday: perDay.monday,
-                    tuesday: perDay.tuesday,
-                    wednesday: perDay.wednesday,
-                    thursday: perDay.thursday,
-                    friday: perDay.friday,
-                    saturday: perDay.saturday,
-                    sunday: perDay.sunday
-                };
-
-                db.query("INSERT INTO discount_repetition SET ?", [dstRpt], (rErr, rResult) => {
-                    if (rErr) {
-                        res.status(410).jsonp(rErr);
-                        next(rErr);
-                    } else {
-                        const dValue = {
-                            user_type: 1,
-                            discount: result.insertId,
-                            value: req.body.value
-                        }
-                        db.query("INSERT INTO discount_value SET ?", [dValue], (vErr, vResult) => {
-                            if (vErr) {
-                                res.status(410).jsonp(vErr);
-                                next(vErr);
-                            } else {
-                                res.status(200).jsonp({discount: result.insertId});
-                            }
-                        });
-                    }
-                });
+        } else {
+            const perDay = req.body.per_day;
+            const dstInfo = {
+                company: req.decoded.id,
+                discount_type: req.body.discount_type,
+                times_used: 0,
+                cost: req.body.cost,
+                name: req.body.name,
+                description: req.body.description,
+                picture_link: "",
+                product: req.body.product,
+                nb_max: req.body.nb_max,
+                creation_date: new Date(),
+                start_date: (req.body.start_date) ? req.body.start_date : new Date,
+                expiration_date: req.body.expiration_date,
+                //per_day: (Array.isArray(perDay)) ? 1 : 0,
+                per_day: 1,
+                active: 1
             }
-        });
+
+            db.query("INSERT INTO discount SET ?", [dstInfo], (err, result) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else {
+                    const dstRpt = {
+                        discount: result.insertId,
+                        monday: perDay.monday,
+                        tuesday: perDay.tuesday,
+                        wednesday: perDay.wednesday,
+                        thursday: perDay.thursday,
+                        friday: perDay.friday,
+                        saturday: perDay.saturday,
+                        sunday: perDay.sunday
+                    };
+
+                    db.query("INSERT INTO discount_repetition SET ?", [dstRpt], (rErr, rResult) => {
+                        if (rErr) {
+                            res.status(410).jsonp(rErr);
+                            next(rErr);
+                        } else {
+                            const dValue = {
+                                user_type: 1,
+                                discount: result.insertId,
+                                value: req.body.value
+                            }
+                            db.query("INSERT INTO discount_value SET ?", [dValue], (vErr, vResult) => {
+                                if (vErr) {
+                                    res.status(410).jsonp(vErr);
+                                    next(vErr);
+                                } else {
+                                    res.status(200).jsonp({discount: result.insertId});
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
     } catch (err) {
         res.status(400).json(err);
     }
@@ -290,9 +290,6 @@ router.delete('/api/discount/:discountId', midWare.checkToken, (req, res, next) 
             } else {
                 if(!results[0]){
                     res.status(404).jsonp("Impossible to delete this discount : it doesn't exist, was already deleted, or you are not its owner.");
-                    return 2;
-                } else if (req.body.nb_max != 0 && results[0].nb_used >= req.body.nb_max) {
-                    res.status(403).jsonp("Cannot change the max usage number of the discount : it was used more or equally that amount of time.");
                     return 2;
                 } else {
                     db.query("DELETE FROM discount_repetition WHERE discount = ?", [req.params.discountId], (err, result) => {
