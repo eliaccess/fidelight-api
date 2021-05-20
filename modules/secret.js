@@ -1,4 +1,5 @@
 module.exports = {
-  secret: 'Geekboots create fidelight USR API',
-  serLog: 'Geekboots create fidelight CMP API'
+  secret: 'e19109114a07bf212cc7d4c5b404fadc04a3448440342279945e9648981b3ba948b99dca744331e48837afcd5dfc84542e38da8fe5e71914611d2453fc8fbe4c',
+  serLog: 'Geekboots create fidelight CMP API',
+  secret_refresh_token: '3b0518c622886d1994df43fb1be0adf1ae20e0c1454334f8879a13d65d32f3dc81013202505db78e9b0c97bf057a9b03c766b0aabe338353de04ff936d4c63e2'
 };

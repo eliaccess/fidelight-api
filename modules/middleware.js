@@ -4,8 +4,6 @@ const config = require('./secret');
 let checkToken = (req, res, next) => {
   let token = req.headers['x-access-token'] || req.headers['authorization']; // Express headers are auto converted to lowercase
 
-  
-
   if (token) {
     if (token.startsWith('Bearer ')) {
         // Remove Bearer from string
@@ -14,14 +12,14 @@ let checkToken = (req, res, next) => {
 
     jwt.verify(token, config.secret, (err, decoded) => {
       if (err) {
-        return res.status(401).jsonp('Unauthorized access!');
+        return res.status(403).jsonp('Unauthorized access!');
       } else {
         req.decoded = decoded;
         next();
       }
     });
   } else {
-    return res.status(401).jsonp('Invalid request... Authentication missing');
+    return res.status(401).jsonp('Authentication missing');
   }
 };
 
