@@ -6,7 +6,8 @@ const db = require('../modules/dbConnect');
 const config = require('../modules/secret');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
-
+const googleApi = require('./googleAuth');
+const url = require('url');
 
 let regValidate = [
     check('email', 'Username Must Be an Email Address').isEmail(),
@@ -23,7 +24,7 @@ function qrGen(length) {
        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
- }
+}
 
 
 router.post("/api/user/register", regValidate, (req, res, next) => {
@@ -34,7 +35,6 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
         let regData = {
             surname: req.body.surname,
             name: req.body.name,
-            phone: req.body.phone,
             hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
             salt: BCRYPT_SALT_ROUNDS,
             email: req.body.email,
@@ -42,8 +42,8 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
             birthdate: req.body.birthdate,
             registration_date: new Date(),
             qr_key: qrCode,
-            verified: '0',
-            active: '1'
+            verified: 0,
+            active: 1
         };
 
         //Verifying that the user doesn't exist in table then inserting the data
@@ -92,56 +92,98 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
     }
 });
 
+// Routes for Google OAuth2
+const scopes = ['email', 'profile'];
 
-let tokenAuth = [
-    check('token').exists(),
-    check('email', 'Username Must Be an Email Address').isEmail(),
-    check('surname').exists(),
-    check('name').exists(),
-    check('birthdate').exists()
-];
+exports.requestGmailAuth = function (req, res, next){
+    let url = googleApi.generateUrl(scopes);
+    res.status(200).jsonp(url);
+}
 
-router.get('/api/user/register/gauth', tokenAuth, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        let regData = {
-            surname: req.body.surname,
-            name: req.body.name,
-            email: req.body.email,
-            birthdate: req.body.birthdate,
-            registration_date: new Date(),
-            google_token: req.body.token,
-            verified: '0',
-            active: '0'
-        };
+exports.getGmailUserInfo = async function (req, res, next){
+    const qs = new url.URL(req.url, 'http://localhost:8000').searchParams;
+    let code = qs.get('code');
 
-        db.query("SELECT * FROM user WHERE BINARY google_token = ?", [req.body.token], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    res.status(410).jsonp("Your are already registered!");
-                } else {
-                    
-                    db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
-                        if (err) {
-                            res.status(410).jsonp(err);
-                            next(err);
-                        } else {
-
-                            res.status(200).jsonp("Register successfully!");
-                        }
-                    });
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
+    if(!code){
+        next(new Error('No code provided'))
     }
-});
 
-router.get('/api/user/register/fauth', tokenAuth, (req, res, next) => {
+    googleApi.getUserInfo(code)
+        .then(function(response){
+            try {
+                validationResult(req).throw();
+                const qrCode = qrGen(10);
+                let regData = {
+                    surname: response.usrData.given_name,
+                    name: response.usrData.family_name,
+                    hash_pwd: 0,
+                    salt: "no",
+                    email: response.usrData.email,
+                    registration_date: new Date(),
+                    qr_key: qrCode,
+                    google_token: response.refresh_token,
+                    profile_picture_link: response.usrData.picture,
+                    verified: response.usrData.verified_email ? 1 : 0,
+                    active: 1
+                };
+        
+                //Verifying that the user doesn't exist in table then inserting the data
+                db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
+                    if (err) {
+                        res.status(410).jsonp(err);
+                        next(err);
+                    } else {
+                        if (rows[0]) {
+                            /* If the account already exists, then we login the user */
+                            const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
+                            res.status(200).jsonp({id: rows[0].id, qr_key: rows[0].qr_key, token: token});
+                        } else {
+                            db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                                if (err) {
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    //Adding the user to default user type
+                                    db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                        if (err) {
+                                            res.status(410).jsonp(err);
+                                            next(err);
+                                        } else {
+                                            let regData2 = {
+                                                user: result.insertId,
+                                                user_type: rows2[0].id
+                                            };
+                                            db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                                if (err) {
+                                                    res.status(410).jsonp(err);
+                                                    next(err);
+                                                }
+                                                else{
+                                                    const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name, type: 'user'}, config.secret);
+                                                    res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+            } catch (err) {
+                res.status(400).json(err);
+            }
+        }).catch(function(e){
+            next(new Error(e.message))
+            res.status(500).jsonp("An issue occured when trying to create your account. Please try again later.");
+    });
+}
+
+router.get('/api/user/gauth/authenticate/', exports.getGmailUserInfo);
+
+router.get('/api/user/gauth', exports.requestGmailAuth);
+
+router.get('/api/user/register/fauth', (req, res, next) => {
     try {
         validationResult(req).throw();
         let regData = {

@@ -1,9 +1,9 @@
 //require('zone.js/dist/zone-node');
-const express = require("express");
-const bodyParser = require("body-parser");
-const path = require("path");
+const express = require('express');
+const bodyParser = require('body-parser');
+const path = require('path');
 const app = express();
-const multer = require("multer");
+const multer = require('multer');
 
 //const {enableProdMode} = require('@angular/core');
 
