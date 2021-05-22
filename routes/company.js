@@ -61,7 +61,43 @@ let postSchedule = [
     midWare.checkToken
 ];
 
-/*
+function checkHourFormat(data){
+    if(typeof data != 'string' || data.length != 8) return false;
+    if(!data.includes(':')) return false;
+    newData = data.split(':');
+    if(newData.length != 3) return false;
+    hours = newData[0];
+    minutes = newData[1];
+    seconds = newData[2];
+    if(hours.length != 2 || minutes.length != 2 || seconds.length != 2) return false;
+    if(isNaN(hours) || isNaN(minutes) || isNaN(seconds)) return false;
+    if(isNaN(parseInt(hours)) || isNaN(parseInt(minutes)) || isNaN(parseInt(seconds))) return false;
+    if(parseInt(hours) < 0 || parseInt(hours) >= 24 || parseInt(minutes) >= 60 || parseInt(minutes) < 0 || parseInt(seconds) >= 60 || parseInt(seconds) < 0 ) return false;
+    return true;
+}
+
+function checkScheduleFormat(data){
+    if(!data) return false;
+    if(data.length > 7 || data.length == 0) return false;
+
+    let daysProgrammed = [];
+
+    let checkingParts = true
+
+    data.forEach(element => {
+        if(Object.keys(element).length != 5) checkingParts = false;
+        else if(!element.day || typeof element.day != 'number' || element.day > 7 || element.day <= 0) checkingParts = false;
+        else if(daysProgrammed.includes(element.day)) checkingParts = false;
+        //else if(!element.open_am || !element.close_am || !element.open_pm || !element.close_pm) checkingParts = false;
+        else if((element.open_am && !checkHourFormat(element.open_am)) || (element.close_am && !checkHourFormat(element.close_am)) || (element.open_pm && !checkHourFormat(element.open_pm)) || (element.close_pm && !checkHourFormat(element.close_pm))) checkingParts = false;
+        daysProgrammed.push(element.day);
+    });
+    console.log(checkingParts);
+    if(!checkingParts) return false;
+    else return true;
+}
+
+// This route works as POST + PUT
 router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
     try {
         validationResult(req).throw();
@@ -69,36 +105,77 @@ router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
             res.status(403).jsonp('Access forbidden');
             return 2;
         } else {
-            db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+            db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows2, results) => {
                 if (err) {
                     res.status(410).jsonp(err);
                     next(err);
-                } else if (rows[0]){
-                    db.query("SELECT * FROM schedule WHERE company_location = ?", [rows[0].id], (err, rows, results) => {
-                        if(err){
-                            res.status(410).jsonp(err);
-                            next(err);
-                        }
-                        else {
-                            // Creating the structure from schedule
-                            var schedule = {};
-                            schedule.forEach(element => {
-                                if(!element.day || typeof element.day != 'number' || element.day > 7 || element.day <= 0);
-                                else if((!element.open && !element.close) || typeof element.day != 'number' || element.day > 7 || element.day <= 0) ;
-                                else {
-                                    let scheduleData = {
-                                        day: Math.trunc(element.day),
-                                    }
-                                }
-                            });
-
-                            if (rows[0]) {
-
-                            } else {
-
+                } else if (rows2[0]){
+                    if(!checkScheduleFormat(req.body.schedule)) res.status(400).jsonp('Error in the request format');
+                    else {
+                        db.query("SELECT * FROM schedule WHERE company_location = ?", [rows2[0].id], (err, rows, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
                             }
-                        }
-                    });
+                            else {
+                                let scheData = [];
+                                let scheDataDay = {};
+                                let dayToAdd = [];
+
+                                req.body.schedule.forEach(element => {
+                                    let scheDataDay = {
+                                        company_location: rows2[0].id,
+                                        day: element.day,
+                                        open_am: element.open_am,
+                                        close_am: element.close_am,
+                                        open_pm: element.open_pm,
+                                        close_pm: element.close_pm
+                                    };
+                                    scheData.push(scheDataDay);
+                                    dayToAdd.push(element.day);
+                                });
+                                
+                                if (rows[0]) {
+                                    scheData.forEach(element => {
+                                        doesExist = -1;
+
+                                        rows.forEach(existing => {
+                                            console.log(element.day, existing.day);
+                                            if(element.day == existing.day) doesExist = existing.id;
+                                        });
+
+                                        if(doesExist != -1) {
+                                            db.query("UPDATE schedule SET ? WHERE id = ?", [element, doesExist], (err, rows, results) => {
+                                                if(err){
+                                                    res.status(410).jsonp(err);
+                                                    next(err);
+                                                }
+                                            });
+                                        } else {
+                                            db.query("INSERT INTO schedule SET ?", [element], (err, rows, results) => {
+                                                if(err){
+                                                    res.status(410).jsonp(err);
+                                                    next(err);
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                    res.status(200).jsonp("Schedule updated successfully");
+                                } else {
+                                    scheData.forEach(element => {
+                                        db.query("INSERT INTO schedule SET ?", [element], (err, rows, results) => {
+                                            if(err){
+                                                res.status(410).jsonp(err);
+                                                next(err);
+                                            }
+                                        });
+                                    });
+                                    res.status(200).jsonp("Schedule added successfully");
+                                }
+                            }
+                        });
+                    }
                 } else {
                     res.status(404).jsonp("You have no company location!");
                 }
@@ -108,7 +185,7 @@ router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
         res.status(400).json(err);
     }
 });
-*/
+
 
 router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
     try {
@@ -360,6 +437,13 @@ router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
                                     } else {
                                         if(rows2){
                                             rows2.forEach(line => {
+                                                /* Deleting the company schedule */
+                                                db.query("DELETE FROM schedule WHERE company_location = ?", [line.id], (err, rows, results) => {
+                                                    if(err){
+                                                        res.status(410).jsonp(err);
+                                                        next(err);
+                                                    }
+                                                });
                                                 /* Getting every picture link to delete them */
                                                 db.query("SELECT picture_link FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows3, results) => {
                                                     if(err){
@@ -486,8 +570,9 @@ router.get('/api/company/profile/:companyId', midWare.checkToken, (req, res, nex
                             city: rows[0].city,
                             country: rows[0].country,
                         }
+
                         /* Adding the schedule of the company if it exists */
-                        db.query("SELECT day, am, open, close FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
+                        db.query("SELECT day, open_am, close_am, open_pm, close_pm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp(err);
                                 next(err);
