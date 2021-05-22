@@ -337,6 +337,14 @@ router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
                             }
                         });
 
+                        /* Deleting the company from users liked companies */
+                        db.query("DELETE FROM user_like WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            }
+                        });
+
                         /* Deleting company private information */
                         db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
                             if(err){

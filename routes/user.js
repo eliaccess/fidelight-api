@@ -113,11 +113,25 @@ router.delete("/api/user/register", midWare.checkToken, (req, res, next) => {
             phone: "",
             hash_pwd: "",
             email: "",
-            birthdate: "",
+            birthdate: new Date(),
             qr_key: "",
             verified: '0',
             active: '0'
         };
+
+        db.query("DELETE FROM balance WHERE user = ?", [req.decoded.id], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            }
+        });
+
+        db.query("DELETE FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            }
+        });
 
         db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (err, rows, results) => {
             if (err) {
@@ -241,7 +255,7 @@ router.get('/api/user/like/', midWare.checkToken, (req, res, next) => {
             res.status(403).jsonp('Access forbidden');
             return 2;
         }
-        db.query("SELECT company FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
+        db.query("SELECT company.id FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
