@@ -186,6 +186,31 @@ router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
     }
 });
 
+router.delete('/api/company/schedule/:day', midWare.checkToken, (req, res, next) => {
+    validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+                if(err){
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else {
+                    db.query("DELETE FROM schedule WHERE company_location = ? AND day = ?", [rows[0].id, req.params.day], (err, rows, results) => {
+                        if(err){
+                            res.status(410).jsonp(err);
+                            next(err);
+                        } else {
+                            res.status(200).jsonp("Schedule deleted successfully!")
+                        }
+                    });
+                }
+            });
+        }
+})
+
+
 
 router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
     try {
