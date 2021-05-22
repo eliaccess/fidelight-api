@@ -4,16 +4,20 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
 const multer = require('multer');
+const passport = require('passport');
 
 //const {enableProdMode} = require('@angular/core');
 
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(passport.initialize());
 
 
 /* Include routes */
-const usrAuth = require('./routes/usrAuth');
+const usrAuth = require('./routes/userAuth');
+const compAuth = require('./routes/companyAuth');
+const user = require('./routes/user');
 const balance = require('./routes/balance');
 const transaction = require('./routes/transaction');
 const companyPoint = require('./routes/companyPoint');
@@ -34,10 +38,12 @@ app.use((req, res, next) => {
 
 
 /* Addings routes to app */
+app.use(user);
 app.use(usrAuth);
 app.use(balance);
 app.use(transaction);
 app.use(company);
+app.use(compAuth);
 app.use(support);
 app.use(search);
 app.use(companyPoint);

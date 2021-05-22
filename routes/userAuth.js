@@ -7,6 +7,8 @@ const config = require('../modules/secret');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 const googleApi = require('./googleAuth');
+const passport = require('passport');
+const FacebookStrategy = require('passport-facebook').Strategy;
 const url = require('url');
 
 let regValidate = [
@@ -25,7 +27,6 @@ function qrGen(length) {
     }
     return result;
 }
-
 
 router.post("/api/user/register", regValidate, (req, res, next) => {
     try {
@@ -183,71 +184,120 @@ router.get('/api/user/gauth/authenticate/', exports.getGmailUserInfo);
 
 router.get('/api/user/gauth', exports.requestGmailAuth);
 
-router.get('/api/user/register/fauth', (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        let regData = {
-            surname: req.body.surname,
-            name: req.body.name,
-            email: req.body.email,
-            birthdate: req.body.birthdate,
-            registration_date: new Date(),
-            facebook_token: req.body.token,
-            verified: '0',
-            active: '0'
-        };
 
-        db.query("SELECT * FROM user WHERE BINARY facebook_token = ?", [req.body.token], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    res.status(410).jsonp("Your are already registered!");
+passport.serializeUser(function(user, done) {
+    done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+    done(null, obj);
+});
+
+passport.use(
+    new FacebookStrategy(
+        {
+            clientID: "1302194806842974",
+            clientSecret: "762ecb81392b8a400f3ca5bf08f02c0f",
+            callbackURL: "http://localhost:8000/api/user/fauth/authenticate",
+            profileFields: ["email", "name"]
+        },
+        function(accessToken, refreshToken, profile, done) {
+            try{
+                const { email, first_name, last_name } = profile._json;
+                const userData = {
+                    email: email,
+                    surname: first_name,
+                    lastname: last_name
+                };
+                console.log(userData);
+
+                const qrCode = qrGen(10);
+                let regData = {
+                    surname: userData.surname,
+                    name: userData.lastname,
+                    hash_pwd: 0,
+                    salt: "no",
+                    email: userData.email ? userData.email : null,
+                    registration_date: new Date(),
+                    qr_key: qrCode,
+                    facebook_token: refreshToken,
+                    verified: userData.email ? 1 : 0,
+                    active: 1
+                };
+                
+                if(!userData.email){
+                    done(new Error("Your Facebook account does not have a verified account."));
                 } else {
-                    
-                    db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                    //Verifying that the user doesn't exist in table then inserting the data
+                    db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
                         if (err) {
                             res.status(410).jsonp(err);
                             next(err);
                         } else {
-
-                            res.status(200).jsonp("Register successfully!");
+                            if (rows[0]) {
+                                // If the account already exists, then we login the user 
+                                const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
+                                res.status(200).jsonp({id: rows[0].id, qr_key: rows[0].qr_key, token: token});
+                            } else {
+                                db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                                    if (err) {
+                                        res.status(410).jsonp(err);
+                                        next(err);
+                                    } else {
+                                        //Adding the user to default user type
+                                        db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                            if (err) {
+                                                res.status(410).jsonp(err);
+                                                next(err);
+                                            } else {
+                                                let regData2 = {
+                                                    user: result.insertId,
+                                                    user_type: rows2[0].id
+                                                };
+                                                db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                                    if (err) {
+                                                        res.status(410).jsonp(err);
+                                                        next(err);
+                                                    }
+                                                    else{
+                                                        const token = jwt.sign({ id: result.insertId, sName: userData.surname, name: userData.lastname, type: 'user'}, config.secret);
+                                                        res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
                     });
                 }
+                done(null, userData);
+            } catch (err) {
+                done(err);
             }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
+        }
+    )
+);
+
+router.get('/api/user/fauth', passport.authenticate("facebook", {scope: ['email', 'public_profile']}));
+
+router.get('/api/user/fauth/authenticate', passport.authenticate("facebook", {
+        scope: ['email', 'public_profile'],
+        successRedirect: "/api/user/fauth/authenticate/success/",
+        failureRedirect: "/api/user/fauth/authenticate/failure/"
+    })
+);
+
+
+router.get('/api/user/fauth/authenticate/failure/', (req, res) => {
+    console.log(req.body);
+    res.status(500).send("An error occured. Please try again later.");
 });
 
-router.delete("/api/user/register", midWare.checkToken, (req, res, next) => {
-    try {
-        let regData = {
-            surname: "",
-            name: "",
-            phone: "",
-            hash_pwd: "",
-            email: "",
-            birthdate: "",
-            qr_key: "",
-            verified: '0',
-            active: '0'
-        };
-
-        db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                res.status(200).jsonp("Account Deleted Successfully!");
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
+router.get('/api/user/fauth/authenticate/success/', (req, res) => {
+    console.log(req.body);
+    res.status(200).send("Success");
 });
 
 let logAuth = [
@@ -280,209 +330,6 @@ router.post('/api/user/login', logAuth, (req, res, next) => {
         res.status(400).json(err);
     }
 });
-
-let passAuth = [
-    check('password').exists(),
-    check('previous_password').exists()
-];
-
-router.put('/api/user/password', passAuth, midWare.checkToken, (req, res, next) => {
-    try {
-        if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
-            return 2;
-        }
-        validationResult(req).throw();
-        const BCRYPT_SALT_ROUNDS = 12;
-        let regData = {
-            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
-            salt: BCRYPT_SALT_ROUNDS
-        };
-
-        db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                    if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
-                        db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
-                            if (iErr) {
-                                res.status(410).jsonp(iErr);
-                                next(iErr);
-                            } else {
-                                const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
-                                res.status(200).jsonp({token: token });
-                            }
-                        });
-                    } else {
-                        res.status(410).jsonp("Wrong old password!");
-                    }
-                } else {
-                    res.status(410).jsonp("Authentication failed!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-
-router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
-    try {
-        if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
-            return 2;
-        }
-        db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    res.status(200).jsonp({surname: rows[0].surname, name: rows[0].name, phone: rows[0].phone, email: rows[0].email, birthdate: rows[0].birthdate});
-                } else {
-                    res.status(404).jsonp("Profile not found!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-
-
-router.put('/api/user/profile', midWare.checkToken, (req, res, next) => {
-    try {
-        if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
-            return 2;
-        }
-        let usrData = {
-            surname: req.body.surname,
-            name: req.body.name,
-            email: req.body.email,
-            phone: req.body.phone,
-            birthdate: req.body.birthdate
-        };
-        db.query("UPDATE user SET ? WHERE id = ?", [usrData, req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                res.status(200).jsonp("Profile updated successfully!");
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-
-/*
-let vrAuth = [
-    check('qrCode').exists(),
-    midWare.checkToken
-];
-*/
-
-/*
-router.post('/api/user/disconnect', midWare.checkToken, (req, res, next) => {
-    try {
-        res.status(200).jsonp("Token deleted successfully!");
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
-
-/*
-let passAuth = [
-    check('password').exists(),
-    check('email', 'Username Must Be an Email Address').isEmail()
-];
-
-router.put('/api/user/password', passAuth, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        const BCRYPT_SALT_ROUNDS = 12;
-        let regData = {
-            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
-        };
-
-        db.query("UPDATE user SET ? WHERE email = ?", [regData, req.body.email], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                db.query("SELECT * FROM user WHERE email = ?", [req.body.email], (iErr, iRows, iResult) => {
-                    if (iErr) {
-                        res.status(410).jsonp(iErr);
-                        next(iErr);
-                    } else {
-                        const token = jwt.sign({ id: iRows[0].id, sName: iRows[0].surname, name:  iRows[0].name}, config.secret);
-                        res.status(200).jsonp({token: token});
-                    }
-                });
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});*/
-
-/*
-router.post('/api/user/verify', vrAuth, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, result) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    if (rows[0].qr_key == req.body.qrCode) {
-                        db.query("UPDATE user SET ? WHERE id = ?", [{ verified: '1' }, req.decoded.id], (err, result) => {
-                            if (err) {
-                                res.status(410).jsonp(err);
-                            } else {
-                                res.status(200).jsonp("You are successfully verified!");
-                            }
-                        });
-                    } else {
-                        res.status(410).jsonp("Verification failed!");
-                    }
-                } else {
-                    res.status(410).jsonp("Invalid User!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
-
-/*
-router.get('/api/user/type', (req, res, next) => {
-    try {
-        db.query("SELECT * FROM user_type", (err, rows, result) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    res.status(200).jsonp(rows);
-                } else {
-                    res.status(410).jsonp("User type not found!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
 
 
 module.exports = router;

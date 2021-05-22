@@ -56,97 +56,59 @@ router.get('/api/company/type', midWare.checkToken, (req, res, next) => {
     }
 });
 
-
-function logGen(length) {
-    var result           = '';
-    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
-       result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-}
-
-
-let regValidate = [
-    check('email', 'Username Must Be an Email Address').isEmail(),
-    check('name').exists(),
-    check('password').exists(),
-    check('description').exists(),
-    check('phone').exists(),
-    check('company_type').exists().isNumeric(),
-    check('street_number').exists(),
-    check('street_name').exists(),
-    check('city').exists(),
-    check('country').exists()
+let postSchedule = [
+    check('schedule').exists(),
+    midWare.checkToken
 ];
 
-router.post('/api/company/register', regValidate, (req, res, next) => {
+/*
+router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
     try {
         validationResult(req).throw();
-        
-        db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    res.status(410).jsonp("Your email address is already registered !");
-                } else {
-                    const BCRYPT_SALT_ROUNDS = 12;
-                    logGened = logGen(10);                    
-                    
-                    const regData = {
-                        login: logGened,
-                        name: req.body.name,
-                        hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
-                        salt: BCRYPT_SALT_ROUNDS,
-                        email: req.body.email,
-                        description: req.body.description,
-                        phone: req.body.phone,
-                        registration_date: new Date(),
-                        background_picture: '',
-                        logo_link: '',
-                        paying_method: null,
-                        company_type: req.body.company_type,
-                        verified: 0,
-                        active: 0
-                    };
-                    db.query("INSERT INTO company SET ?", [regData], (iErr, result) => {
-                        if (iErr) {
-                            res.status(410).jsonp(iErr);
-                            next(iErr);
-                        } else {
-                            const usrData = {
-                                company: result.insertId,
-                                phone: req.body.phone,
-                                siret: req.body.siret,
-                                street_number: req.body.street_number,
-                                street_name: req.body.street_name,
-                                city: req.body.city,
-                                country: req.body.country,
-                                billing_adress: 1
-                            };
-                            db.query("INSERT INTO company_location SET ?", [usrData], (iaErr, logResult) => {
-                                if (iaErr) {
-                                    res.status(410).jsonp(iaErr);
-                                    next(iaErr);
-                                } else {
-                                    const token = jwt.sign({ id: result.insertId, login: logGened, name: req.body.name, type: 'company' }, config.secret);
-                                    res.status(200).jsonp({ login: logGened, token: token, id: result.insertId });
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        } else {
+            db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else if (rows[0]){
+                    db.query("SELECT * FROM schedule WHERE company_location = ?", [rows[0].id], (err, rows, results) => {
+                        if(err){
+                            res.status(410).jsonp(err);
+                            next(err);
+                        }
+                        else {
+                            // Creating the structure from schedule
+                            var schedule = {};
+                            schedule.forEach(element => {
+                                if(!element.day || typeof element.day != 'number' || element.day > 7 || element.day <= 0);
+                                else if((!element.open && !element.close) || typeof element.day != 'number' || element.day > 7 || element.day <= 0) ;
+                                else {
+                                    let scheduleData = {
+                                        day: Math.trunc(element.day),
+                                    }
                                 }
                             });
+
+                            if (rows[0]) {
+
+                            } else {
+
+                            }
                         }
                     });
+                } else {
+                    res.status(404).jsonp("You have no company location!");
                 }
-            }
-        });
+            });
+        }
     } catch (err) {
-        console.log(err);
         res.status(400).json(err);
     }
 });
-
+*/
 
 router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
     try {
@@ -245,7 +207,6 @@ router.delete(('/api/company/logo/'), midWare.checkToken, (req, res, next) => {
         res.status(400).json(err);
     }
 });
-
 
 router.post(('/api/company/background/'), upload.single('background_picture'), midWare.checkToken, (req, res, next) => {
     try {
@@ -495,63 +456,86 @@ router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
     }
 });
 
-
-let tokenAuth = [
-    check('email', 'Username Must Be an Email Address').isEmail(),
-    check('password').exists()
-];
-
-router.post('/api/company/login', tokenAuth, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-
-        db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                    if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
-                        const token = jwt.sign({ id: rows[0].id, login: rows[0].login, name: rows[0].name, type: 'company' }, config.secret);
-                        res.status(200).jsonp({token: token });
-                    } else {
-                        res.status(410).jsonp("Authentication failed!");
-                    }
-                } else {
-                    res.status(410).jsonp("Authentication failed!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-
-/* TODO : Add inner join to get the adress */
 router.get('/api/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
     try {
-        db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    companyInfo = {
-                        name: rows[0].name,
-                        phone: rows[0].phone,
-                        email: rows[0].email,
-                        registration_date: rows[0].registration_date,
-                        description: rows[0].description,
-                        logo: rows[0].logo_link,
-                        background_picture: rows[0].background_picture
-                    }
-                    res.status(200).jsonp(companyInfo);
+        if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
+            db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
                 } else {
-                    res.status(404).jsonp("Profile not found!");
+                    if (rows[0]) {
+                        let companyInfo = {
+                            name: rows[0].name,
+                            phone: rows[0].phone,
+                            email: rows[0].email,
+                            registration_date: rows[0].registration_date,
+                            description: rows[0].description,
+                            logo: rows[0].logo,
+                            background_picture: rows[0].background_picture,
+                            street_number: rows[0].street_number,
+                            street_name: rows[0].street_name,
+                            city: rows[0].city,
+                            country: rows[0].country,
+                        }
+                        /* Adding the schedule of the company if it exists */
+                        db.query("SELECT day, am, open, close FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else {
+                                if(rows2[0]){
+                                    companyInfo.schedule = rows2;
+                                    res.status(200).jsonp(companyInfo);
+                                } else {
+                                    res.status(200).jsonp(companyInfo);
+                                }
+                            }
+                        });
+                    } else {
+                        res.status(404).jsonp("Profile not found!");
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp(err);
+                    next(err);
+                } else {
+                    if (rows[0]) {
+                        let companyInfo = {
+                            name: rows[0].name,
+                            phone: rows[0].phone,
+                            registration_date: rows[0].registration_date,
+                            description: rows[0].description,
+                            logo: rows[0].logo,
+                            background_picture: rows[0].background_picture,
+                            street_number: rows[0].street_number,
+                            street_name: rows[0].street_name,
+                            city: rows[0].city,
+                            country: rows[0].country,
+                        }
+                        /* Adding the schedule of the company if it exists */
+                        db.query("SELECT day, am, open, close FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else {
+                                if(rows2[0]){
+                                    companyInfo.schedule = rows2;
+                                    res.status(200).jsonp(companyInfo);
+                                } else {
+                                    res.status(200).jsonp(companyInfo);
+                                }
+                            }
+                        });
+                    } else {
+                        res.status(404).jsonp("Profile not found!");
+                    }
+                }
+            });
+        }
     } catch (err) {
         res.status(400).json(err);
     }
