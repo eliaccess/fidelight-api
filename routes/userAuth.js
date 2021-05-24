@@ -12,7 +12,6 @@ const url = require('url');
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 */
-const url = require('url');
 
 let regValidate = [
     check('email', 'Username Must Be an Email Address').isEmail(),
