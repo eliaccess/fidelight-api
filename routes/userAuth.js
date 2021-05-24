@@ -7,8 +7,11 @@ const config = require('../modules/secret');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 const googleApi = require('./googleAuth');
+const url = require('url');
+/*
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
+*/
 const url = require('url');
 
 let regValidate = [
@@ -184,7 +187,7 @@ router.get('/api/user/gauth/authenticate/', exports.getGmailUserInfo);
 
 router.get('/api/user/gauth', exports.requestGmailAuth);
 
-
+/*
 passport.serializeUser(function(user, done) {
     done(null, user);
 });
@@ -192,6 +195,7 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(obj, done) {
     done(null, obj);
 });
+
 
 passport.use(
     new FacebookStrategy(
@@ -209,7 +213,6 @@ passport.use(
                     surname: first_name,
                     lastname: last_name
                 };
-                console.log(userData);
 
                 const qrCode = qrGen(10);
                 let regData = {
@@ -229,7 +232,7 @@ passport.use(
                     done(new Error("Your Facebook account does not have a verified account."));
                 } else {
                     //Verifying that the user doesn't exist in table then inserting the data
-                    db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
+                    db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ?", [regData.email], (err, rows, results) => {
                         if (err) {
                             res.status(410).jsonp(err);
                             next(err);
@@ -237,17 +240,17 @@ passport.use(
                             if (rows[0]) {
                                 // If the account already exists, then we login the user 
                                 const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
-                                res.status(200).jsonp({id: rows[0].id, qr_key: rows[0].qr_key, token: token});
+                                done(null, token, 'test');
                             } else {
                                 db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
                                     if (err) {
-                                        res.status(410).jsonp(err);
+                                        done(new Error(err));
                                         next(err);
                                     } else {
                                         //Adding the user to default user type
                                         db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
                                             if (err) {
-                                                res.status(410).jsonp(err);
+                                                done(new Error(err));
                                                 next(err);
                                             } else {
                                                 let regData2 = {
@@ -256,12 +259,12 @@ passport.use(
                                                 };
                                                 db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
                                                     if (err) {
-                                                        res.status(410).jsonp(err);
+                                                        done(new Error(err));
                                                         next(err);
                                                     }
                                                     else{
                                                         const token = jwt.sign({ id: result.insertId, sName: userData.surname, name: userData.lastname, type: 'user'}, config.secret);
-                                                        res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                                                        done(null, token, 'test');
                                                     }
                                                 });
                                             }
@@ -272,7 +275,6 @@ passport.use(
                         }
                     });
                 }
-                done(null, userData);
             } catch (err) {
                 done(err);
             }
@@ -284,21 +286,29 @@ router.get('/api/user/fauth', passport.authenticate("facebook", {scope: ['email'
 
 router.get('/api/user/fauth/authenticate', passport.authenticate("facebook", {
         scope: ['email', 'public_profile'],
-        successRedirect: "/api/user/fauth/authenticate/success/",
+        //successRedirect: "/api/user/fauth/authenticate/success/",
         failureRedirect: "/api/user/fauth/authenticate/failure/"
+    }, (error, token, res) => {
+        // Successful authentication, redirect home.
+        console.log(error, token, res);
+        try{
+            if(error) throw(error);
+            else res.status(200).jsonp(token);
+        } catch (err) {
+            res.status(400).json(err);
+        }
     })
 );
 
 
 router.get('/api/user/fauth/authenticate/failure/', (req, res) => {
-    console.log(req.body);
     res.status(500).send("An error occured. Please try again later.");
 });
 
 router.get('/api/user/fauth/authenticate/success/', (req, res) => {
-    console.log(req.body);
     res.status(200).send("Success");
 });
+*/
 
 let logAuth = [
     check('email', 'Username Must Be an Email Address').isEmail(),
