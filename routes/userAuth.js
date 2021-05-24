@@ -3,8 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const db = require('../modules/dbConnect');
-const config = require('../modules/secret');
-const midWare = require('../modules/middleware');
+const dbAuth = require('../modules/dbConnectAuth');
 const { check, validationResult } = require('express-validator');
 const googleApi = require('./googleAuth');
 const url = require('url');
@@ -12,6 +11,15 @@ const url = require('url');
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 */
+
+// Token expiration for users can be changed here
+function getAccessToken(id, type){
+    return jwt.sign({id: id, type: type}, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1h'});
+}
+
+function getRefreshToken(id, type){
+    return jwt.sign({id: id, type: type}, process.env.REFRESH_TOKEN_SECRET);
+}
 
 let regValidate = [
     check('email', 'Username Must Be an Email Address').isEmail(),
@@ -30,7 +38,7 @@ function qrGen(length) {
     return result;
 }
 
-router.post("/api/user/register", regValidate, (req, res, next) => {
+router.post("/api/user/register", regValidate, async (req, res, next) => {
     try {
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
@@ -79,8 +87,20 @@ router.post("/api/user/register", regValidate, (req, res, next) => {
                                             next(err);
                                         }
                                         else{
-                                            const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name, type: 'user'}, config.secret);
-                                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                                            refToken = getRefreshToken(result.insertId, 'user');
+                                            let saveRefToken = {
+                                                id: result.insertId,
+                                                refresh_token: refToken
+                                            }
+                                            let token = getAccessToken(result.insertId, 'user');
+                                            dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                                if(err){
+                                                    res.status(200).jsonp({id: result.insertId, qr_key: qrCode, access_token: token});
+                                                    next(err);
+                                                } else {
+                                                    res.status(200).jsonp({id: result.insertId, qrCode: qrCode, access_token: token, refresh_token: refToken});
+                                                }
+                                            });
                                         }
                                     });
                                 }
@@ -104,7 +124,7 @@ exports.requestGmailAuth = function (req, res, next){
 }
 
 exports.getGmailUserInfo = async function (req, res, next){
-    const qs = new url.URL(req.url, 'http://localhost:8000').searchParams;
+    const qs = new url.URL(req.url, process.env.DEFAULT_AUTH_SERVER).searchParams;
     let code = qs.get('code');
 
     if(!code){
@@ -138,8 +158,31 @@ exports.getGmailUserInfo = async function (req, res, next){
                     } else {
                         if (rows[0]) {
                             /* If the account already exists, then we login the user */
-                            const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
-                            res.status(200).jsonp({id: rows[0].id, qr_key: rows[0].qr_key, token: token});
+                            const token = getAccessToken(rows[0].id, 'user');
+
+                            dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                                if(err){
+                                    res.status(410).jsonp(err);
+                                    next(err);
+                                } else {
+                                    if(rows2[0]) res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: rows2[0].refresh_token});
+                                    else{
+                                        refToken = getRefreshToken(rows[0].id, 'user');
+                                        let saveRefToken = {
+                                            id: rows[0].id,
+                                            refresh_token: refToken
+                                        }
+                                        dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                            if(err){
+                                                res.status(410).jsonp(err);
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: refToken});
+                                            }
+                                        });
+                                    }
+                                }
+                            });
                         } else {
                             db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
                                 if (err) {
@@ -162,8 +205,20 @@ exports.getGmailUserInfo = async function (req, res, next){
                                                     next(err);
                                                 }
                                                 else{
-                                                    const token = jwt.sign({ id: result.insertId, sName: req.body.surname, name:  req.body.name, type: 'user'}, config.secret);
-                                                    res.status(200).jsonp({id: result.insertId, qr_key: qrCode, token: token});
+                                                    refToken = getRefreshToken(result.insertId, 'user');
+                                                    let saveRefToken = {
+                                                        id: result.insertId,
+                                                        refresh_token: refToken
+                                                    }
+                                                    let token = getAccessToken(result.insertId, 'user');
+                                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                                        if(err){
+                                                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode, access_token: token});
+                                                            next(err);
+                                                        } else {
+                                                            res.status(200).jsonp({id: result.insertId, qrCode: qrCode, access_token: token, refresh_token: refToken});
+                                                        }
+                                                    });
                                                 }
                                             });
                                         }
@@ -186,6 +241,82 @@ router.get('/api/user/gauth/authenticate/', exports.getGmailUserInfo);
 
 router.get('/api/user/gauth', exports.requestGmailAuth);
 
+let refToken = [
+    check('refresh_token').exists()
+];
+
+router.post('/api/user/token/', refToken, (req, res, next) => {
+    try{
+        dbAuth.query("SELECT id FROM user_refresh_token WHERE refresh_token = ?", [req.body.refresh_token], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                if(rows[0]){
+                    res.status(200).jsonp({access_token: getAccessToken(rows[0].id, 'user')});
+                } else {
+                    res.status(403).jsonp("Refresh token is not valid.");
+                }
+            }
+        });
+    } catch(err){
+        res.status(400).json(err);
+    }
+});
+
+let logAuth = [
+    check('email', 'Username Must Be an Email Address').isEmail(),
+    check('password').exists()
+];
+
+router.post('/api/user/login', logAuth, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                if (rows[0]) {
+                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                    if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
+                        const token = getAccessToken(rows[0].id, 'user');
+                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else {
+                                if(rows2[0]) res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: rows2[0].refresh_token});
+                                else{
+                                    refToken = getRefreshToken(rows[0].id, 'user');
+                                    let saveRefToken = {
+                                        id: rows[0].id,
+                                        refresh_token: refToken
+                                    }
+                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(410).jsonp(err);
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: refToken});
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        res.status(410).jsonp("Authentication failed!");
+                    }
+                } else {
+                    res.status(410).jsonp("Authentication failed!");
+                }
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
 /*
 passport.serializeUser(function(user, done) {
     done(null, user);
@@ -199,9 +330,9 @@ passport.deserializeUser(function(obj, done) {
 passport.use(
     new FacebookStrategy(
         {
-            clientID: "1302194806842974",
-            clientSecret: "762ecb81392b8a400f3ca5bf08f02c0f",
-            callbackURL: "http://localhost:8000/api/user/fauth/authenticate",
+            clientID: "FACEBOOK_CLIENT_ID",
+            clientSecret: "process.env.FACEBOOK_SECRET",
+            callbackURL: "process.env.FACEBOOK_REDIRECT_URI",
             profileFields: ["email", "name"]
         },
         function(accessToken, refreshToken, profile, done) {
@@ -308,37 +439,5 @@ router.get('/api/user/fauth/authenticate/success/', (req, res) => {
     res.status(200).send("Success");
 });
 */
-
-let logAuth = [
-    check('email', 'Username Must Be an Email Address').isEmail(),
-    check('password').exists()
-];
-
-router.post('/api/user/login', logAuth, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                    if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
-                        const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
-                        res.status(200).jsonp({token: token });
-                    } else {
-                        res.status(410).jsonp("Authentication failed!");
-                    }
-                } else {
-                    res.status(410).jsonp("Authentication failed!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-
 
 module.exports = router;

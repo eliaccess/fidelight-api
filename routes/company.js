@@ -81,7 +81,7 @@ function checkScheduleFormat(data){
     if(data.length > 7 || data.length == 0) return false;
 
     let daysProgrammed = [];
-
+    if(!Array.isArray(data)) return false;
     let checkingParts = true
 
     data.forEach(element => {
@@ -92,7 +92,6 @@ function checkScheduleFormat(data){
         else if((element.open_am && !checkHourFormat(element.open_am)) || (element.close_am && !checkHourFormat(element.close_am)) || (element.open_pm && !checkHourFormat(element.open_pm)) || (element.close_pm && !checkHourFormat(element.close_pm))) checkingParts = false;
         daysProgrammed.push(element.day);
     });
-    console.log(checkingParts);
     if(!checkingParts) return false;
     else return true;
 }
@@ -140,7 +139,6 @@ router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
                                         doesExist = -1;
 
                                         rows.forEach(existing => {
-                                            console.log(element.day, existing.day);
                                             if(element.day == existing.day) doesExist = existing.id;
                                         });
 
@@ -209,8 +207,6 @@ router.delete('/api/company/schedule/:day', midWare.checkToken, (req, res, next)
             });
         }
 })
-
-
 
 router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
     try {

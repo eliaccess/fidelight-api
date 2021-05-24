@@ -7,9 +7,9 @@ const { oauth2, oauth2_v2 } = require('googleapis/build/src/apis/oauth2');
 class googleApi {
     constructor(){
         const {client_id, client_secret, redirectUri } = {
-            client_id: "385935001269-vmeirtcck4u6gcur3ln4688pi4ap1rdh.apps.googleusercontent.com",
-            client_secret: "6Aa6X1S5ULfDi5uwPbNagdBV",
-            redirectUri: "http://localhost:8000/api/user/gauth/authenticate/"
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            client_secret: process.env.GOOGLE_SECRET,
+            redirectUri: process.env.GOOGLE_REDIRECT_URI
         };
         this.oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri)
     }

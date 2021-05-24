@@ -1,4 +1,5 @@
 let jwt = require('jsonwebtoken');
+require('dotenv').config();
 const config = require('./secret');
 
 let checkToken = (req, res, next) => {
@@ -9,10 +10,10 @@ let checkToken = (req, res, next) => {
         // Remove Bearer from string
         token = token.slice(7, token.length);
     }
-
-    jwt.verify(token, config.secret, (err, decoded) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
       if (err) {
-        return res.status(403).jsonp('Unauthorized access!');
+        if(err.name == 'TokenExpiredError') return res.status(401).jsonp('Your token expired.');
+        else return res.status(403).jsonp('Unauthorized access.');
       } else {
         req.decoded = decoded;
         next();
@@ -25,4 +26,4 @@ let checkToken = (req, res, next) => {
 
 module.exports = {
   checkToken: checkToken
-}
+};

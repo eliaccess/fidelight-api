@@ -1,9 +1,9 @@
 //require('zone.js/dist/zone-node');
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
-const multer = require('multer');
 const passport = require('passport');
 
 //const {enableProdMode} = require('@angular/core');
@@ -12,19 +12,12 @@ const passport = require('passport');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(passport.initialize());
+app.disable('x-powered-by');
 
 
 /* Include routes */
 const usrAuth = require('./routes/userAuth');
 const compAuth = require('./routes/companyAuth');
-const user = require('./routes/user');
-const balance = require('./routes/balance');
-const transaction = require('./routes/transaction');
-const companyPoint = require('./routes/companyPoint');
-const company = require('./routes/company');
-const support = require('./routes/support');
-const search = require('./routes/search');
-const discount = require('./routes/discount');
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,19 +29,9 @@ app.use((req, res, next) => {
   next();
 });
 
-
 /* Addings routes to app */
-app.use(user);
 app.use(usrAuth);
-app.use(balance);
-app.use(transaction);
-app.use(company);
 app.use(compAuth);
-app.use(support);
-app.use(search);
-app.use(companyPoint);
-app.use(discount);
-app.use('/images/companies', express.static("images/companies"));
 
 
 app.use('/', express.static(path.join(__dirname, 'public')));
@@ -70,6 +53,6 @@ app.use((err, req, res, next) => {
   res.status(500).jsonp('Internal server error!');
 });
 
-app.listen(8000, () => {
-  console.log('server started port:8000');
+app.listen(8001, () => {
+  console.log('server started port:8001');
 });

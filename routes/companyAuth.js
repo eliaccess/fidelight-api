@@ -4,8 +4,17 @@ const jwt = require('jsonwebtoken');
 const config = require('../modules/secret');
 const db = require('../modules/dbConnect');
 const bcrypt = require('bcryptjs');
-const midWare = require('../modules/middleware');
+const dbAuth = require('../modules/dbConnectAuth');
 const { check, validationResult } = require('express-validator');
+
+// Token expiration for companies can be changed here
+function getAccessToken(id, type){
+    return jwt.sign({id: id, type: type}, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1h'});
+}
+
+function getRefreshToken(id, type){
+    return jwt.sign({id: id, type: type}, process.env.REFRESH_TOKEN_SECRET);
+}
 
 function logGen(length) {
     var result           = '';
@@ -81,8 +90,22 @@ router.post('/api/company/register', regValidate, (req, res, next) => {
                                     res.status(410).jsonp(iaErr);
                                     next(iaErr);
                                 } else {
-                                    const token = jwt.sign({ id: result.insertId, login: logGened, name: req.body.name, type: 'company' }, config.secret);
-                                    res.status(200).jsonp({ login: logGened, token: token, id: result.insertId });
+                                    refToken = getRefreshToken(result.insertId, 'company');
+                                    let token = getAccessToken(result.insertId, 'company');
+
+                                    let saveRefToken = {
+                                        id: result.insertId,
+                                        refresh_token: refToken
+                                    }
+                                    
+                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(200).jsonp({id: result.insertId, login: logGened, access_token: token});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({id: result.insertId, login: logGened, access_token: token, refresh_token: refToken});
+                                        }
+                                    });
                                 }
                             });
                         }
@@ -113,8 +136,30 @@ router.post('/api/company/login', tokenAuth, (req, res, next) => {
                 if (rows[0]) {
                     hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
                     if (bcrypt.compareSync(req.body.password, hashed_pwd)) {
-                        const token = jwt.sign({ id: rows[0].id, login: rows[0].login, name: rows[0].name, type: 'company' }, config.secret);
-                        res.status(200).jsonp({token: token });
+                        const token = getAccessToken(rows[0].id, 'company');
+                        dbAuth.query("SELECT refresh_token FROM company_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                            if(err){
+                                res.status(410).jsonp(err);
+                                next(err);
+                            } else {
+                                if(rows2[0]) res.status(200).jsonp({id: rows[0].id, access_token: token, refresh_token: rows2[0].refresh_token});
+                                else{
+                                    refToken = getRefreshToken(rows[0].id, 'company');
+                                    let saveRefToken = {
+                                        id: rows[0].id,
+                                        refresh_token: refToken
+                                    }
+                                    dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(410).jsonp(err);
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({id: rows[0].id, access_token: token, refresh_token: refToken});
+                                        }
+                                    });
+                                }
+                            }
+                        });
                     } else {
                         res.status(410).jsonp("Authentication failed!");
                     }
@@ -124,6 +169,29 @@ router.post('/api/company/login', tokenAuth, (req, res, next) => {
             }
         });
     } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
+let refToken = [
+    check('refresh_token').exists()
+];
+
+router.post('/api/company/token/', refToken, (req, res, next) => {
+    try{
+        dbAuth.query("SELECT id FROM company_refresh_token WHERE refresh_token = ?", [req.body.refresh_token], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp(err);
+                next(err);
+            } else {
+                if(rows[0]){
+                    res.status(200).jsonp({access_token: getAccessToken(rows[0].id, 'company')});
+                } else {
+                    res.status(403).jsonp("Refresh token is not valid.");
+                }
+            }
+        });
+    } catch(err){
         res.status(400).json(err);
     }
 });
