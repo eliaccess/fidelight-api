@@ -12,7 +12,7 @@ let newTicketVry = [
     check('message').exists()
 ];
 
-router.post('/api/v1/support/ticket', newTicketVry, (req, res, next) => {
+router.post('/v1/support/ticket', newTicketVry, (req, res, next) => {
     try {
         validationResult(req).throw();
         const ticket = {
@@ -43,7 +43,7 @@ let upTicketVry = [
     check('answerTo').exists()
 ];
 
-router.post('/api/v1/support/ticket/:ticketId', upTicketVry, (req, res, next) => {
+router.post('/v1/support/ticket/:ticketId', upTicketVry, (req, res, next) => {
     try {
         validationResult(req).throw();
         const ticket = {
@@ -66,7 +66,7 @@ let ticketVry = [
     check('ticketId').exists()
 ];
 
-router.get('/api/v1/support/ticket/:ticketId', ticketVry, (req, res, next) => {
+router.get('/v1/support/ticket/:ticketId', ticketVry, (req, res, next) => {
     try {
         db.query("SELECT * FROM ticket WHERE id = ?", [req.params.ticketId], (err, rows, result) => {
             if (err) {

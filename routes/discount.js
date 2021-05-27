@@ -6,7 +6,7 @@ const { check, validationResult } = require('express-validator');
 const con = require('../modules/dbConnect');
 
 
-router.get('/api/v1/discount/type', midWare.checkToken,(req, res, next) => {
+router.get('/v1/discount/type', midWare.checkToken,(req, res, next) => {
     try {
         validationResult(req).throw();
         db.query("SELECT * FROM discount_type", (err, rows, result) => {
@@ -39,7 +39,7 @@ let disValidate = [
 ];
 
 /* TODO: add the user type support */
-router.post('/api/v1/discount', disValidate, (req, res, next) => {
+router.post('/v1/discount', disValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -138,7 +138,7 @@ let upDisValidate = [
     midWare.checkToken
 ];
 
-router.put('/api/v1/discount/:discountId', upDisValidate, (req, res, next) => {
+router.put('/v1/discount/:discountId', upDisValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -235,7 +235,7 @@ router.get('/api/discount', midWare.checkToken, (req, res, next) => {
     }
 });*/
 
-router.get('/api/v1/discount/company/:companyId', midWare.checkToken, (req, res, next) => {
+router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         const date_day = new Date();
         db.query("SELECT * FROM discount INNER JOIN discount_repetition ON discount_repetition.discount = discount.id INNER JOIN discount_value ON discount_value.discount = discount.id WHERE (discount.company = ?) AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.nb_max > discount.times_used) AND (discount.active = 1)", [req.params.companyId, date_day, date_day], (err, rows, result) => {
@@ -256,7 +256,7 @@ router.get('/api/v1/discount/company/:companyId', midWare.checkToken, (req, res,
 });
 
 /* If not always per_day or several values (user_types), then this part need to be changed */
-router.get('/api/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
+router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT discount.company AS company, discount.discount_type AS discount_type, discount.times_used AS times_used, discount.cost AS cost, discount.name AS name, discount.description AS description, discount.picture_link AS picture_link, discount.product AS product, discount.nb_max AS nb_max, discount.creation_date AS creation_date, discount.start_date AS start_date, discount.expiration_date AS expiration_date, discount_repetition.monday AS monday, discount_repetition.tuesday AS tuesday, discount_repetition.wednesday AS wednesday, discount_repetition.thursday AS thursday, discount_repetition.friday AS friday, discount_repetition.saturday AS saturday, discount_repetition.sunday AS sunday, discount_value.value AS value FROM discount INNER JOIN discount_repetition ON discount_repetition.discount = discount.id INNER JOIN discount_value ON discount_value.discount = discount.id WHERE discount.id = ? AND discount.active = 1", [req.params.discountId], (err, rows, result) => {
             if (err) {
@@ -276,7 +276,7 @@ router.get('/api/v1/discount/:discountId', midWare.checkToken, (req, res, next) 
 });
 
 
-router.delete('/api/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
+router.delete('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -339,7 +339,7 @@ let useDis = [
 ];
 
 
-router.post('/api/v1/discount/use/', useDis, (req, res, next) => {
+router.post('/v1/discount/use/', useDis, (req, res, next) => {
     try {
         /* steps :
         - verifying that the discount exists, and is active
@@ -614,7 +614,7 @@ function getTopSixFromOffers(data){
     return indexes;
 }
 
-router.get('/api/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) => {
+router.get('/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) => {
     try {
         /* steps :
         - verifying that the discount exists, and is active

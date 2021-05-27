@@ -10,7 +10,7 @@ let cpyPoint = [
     midWare.checkToken
 ];
 
-router.post('/api/v1/company/points', cpyPoint, (req, res, next) => {
+router.post('/v1/company/points', cpyPoint, (req, res, next) => {
     try {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
@@ -54,7 +54,7 @@ router.post('/api/v1/company/points', cpyPoint, (req, res, next) => {
     }
 });
 
-router.get('/api/v1/company/points/:companyId', midWare.checkToken, (req, res, next) => {
+router.get('/v1/company/points/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM points_earning WHERE company = ?", [req.params.companyId], (err, rows, result) => {
             if (err) {
@@ -76,7 +76,7 @@ let upCpyPoint = [
     midWare.checkToken
 ];
 
-router.put('/api/v1/company/points/', upCpyPoint, (req, res, next) => {
+router.put('/v1/company/points/', upCpyPoint, (req, res, next) => {
     try {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
@@ -144,7 +144,7 @@ router.delete('/api/company/points/', midWare.checkToken, (req, res, next) => {
 */
 
 
-router.get('/api/v1/points/type', midWare.checkToken,(req, res, next) => {
+router.get('/v1/points/type', midWare.checkToken,(req, res, next) => {
     try {
         validationResult(req).throw();
         db.query("SELECT * FROM points_earning_type", (err, rows, result) => {
@@ -171,7 +171,7 @@ let usePts = [
     midWare.checkToken
 ];
 
-router.post('/api/v1/company/points/use/', usePts, (req, res, next) => {
+router.post('/v1/company/points/use/', usePts, (req, res, next) => {
     try {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');

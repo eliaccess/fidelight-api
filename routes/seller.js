@@ -14,7 +14,7 @@ let sellerVfy = [
     midWare.checkToken
 ];
 
-router.post('/api/v1/company/seller', sellerVfy, (req, res, next) => {
+router.post('/v1/company/seller', sellerVfy, (req, res, next) => {
     try {
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
@@ -38,7 +38,7 @@ router.post('/api/v1/company/seller', sellerVfy, (req, res, next) => {
 });
 
 
-router.get('/api/v1/company/seller/:companyId', midWare.checkToken, (req, res, next) => {
+router.get('/v1/company/seller/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM seller WHERE companyId = ?", [req.params.companyId], (err, rows, result) => {
             if (err) {
@@ -58,7 +58,7 @@ router.get('/api/v1/company/seller/:companyId', midWare.checkToken, (req, res, n
 });
 
 
-router.delete('/api/v1/company/seller/:sellerId', midWare.checkToken, (req, res, next) => {
+router.delete('/v1/company/seller/:sellerId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("DELETE FROM seller WHERE id = ?", [req.params.sellerId], (err, rows, result) => {
             if (err) {
@@ -74,7 +74,7 @@ router.delete('/api/v1/company/seller/:sellerId', midWare.checkToken, (req, res,
 });
 
 
-router.get('/api/v1/company/statistics/seller', midWare.checkToken, (req, res, next) => {
+router.get('/v1/company/statistics/seller', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM seller WHERE companyId = ?", [req.decoded.id], (err, rows, result) => {
             if (err) {
