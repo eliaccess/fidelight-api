@@ -25,6 +25,10 @@ const support = require('./routes/support');
 const search = require('./routes/search');
 const discount = require('./routes/discount');
 
+const usrAuth = require('./routes/userAuth');
+const compAuth = require('./routes/companyAuth');
+
+
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
@@ -37,6 +41,10 @@ app.use((req, res, next) => {
 
 
 /* Addings routes to app */
+app.use(usrAuth);
+app.use(compAuth);
+
+
 app.use(user);
 app.use(balance);
 app.use(transaction);
