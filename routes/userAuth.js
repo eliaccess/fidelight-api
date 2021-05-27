@@ -64,7 +64,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(410).jsonp("Your email address or phone number is already registered !");
+                    res.status(409).jsonp("Your email address or phone number is already registered !");
                 } else {
                     db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
                         if (err) {
@@ -95,10 +95,10 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                             let token = getAccessToken(result.insertId, 'user');
                                             dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                                 if(err){
-                                                    res.status(200).jsonp({id: result.insertId, qr_key: qrCode, access_token: token});
+                                                    res.status(200).jsonp({id: result.insertId, qr_key: qrCode + '.' + result.insertId, access_token: token});
                                                     next(err);
                                                 } else {
-                                                    res.status(200).jsonp({id: result.insertId, qrCode: qrCode, access_token: token, refresh_token: refToken});
+                                                    res.status(200).jsonp({id: result.insertId, qrCode: qrCode + '.' + result.insertId, access_token: token, refresh_token: refToken});
                                                 }
                                             });
                                         }
@@ -165,7 +165,7 @@ exports.getGmailUserInfo = async function (req, res, next){
                                     res.status(410).jsonp(err);
                                     next(err);
                                 } else {
-                                    if(rows2[0]) res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: rows2[0].refresh_token});
+                                    if(rows2[0]) res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, access_token: token, refresh_token: rows2[0].refresh_token});
                                     else{
                                         refToken = getRefreshToken(rows[0].id, 'user');
                                         let saveRefToken = {
@@ -177,7 +177,7 @@ exports.getGmailUserInfo = async function (req, res, next){
                                                 res.status(410).jsonp(err);
                                                 next(err);
                                             } else {
-                                                res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: refToken});
+                                                res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, access_token: token, refresh_token: refToken});
                                             }
                                         });
                                     }
@@ -213,10 +213,10 @@ exports.getGmailUserInfo = async function (req, res, next){
                                                     let token = getAccessToken(result.insertId, 'user');
                                                     dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                                         if(err){
-                                                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode, access_token: token});
+                                                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode + '.' + result.insertId, access_token: token});
                                                             next(err);
                                                         } else {
-                                                            res.status(200).jsonp({id: result.insertId, qrCode: qrCode, access_token: token, refresh_token: refToken});
+                                                            res.status(200).jsonp({id: result.insertId, qrCode: qrCode + '.' + result.insertId, access_token: token, refresh_token: refToken});
                                                         }
                                                     });
                                                 }
@@ -298,7 +298,7 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
                                             res.status(410).jsonp(err);
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: refToken});
+                                            res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, access_token: token, refresh_token: refToken});
                                         }
                                     });
                                 }

@@ -10,12 +10,20 @@ resources:
 # The following env variables may contain sensitive information that grants
 # anyone access to your database. Do not add this file to your source control.
 env_variables:
-  DB_USER: root
-  DB_PASS: Password123
+  DB_USER: fidelight_api
+  DB_PASS: insertPasswordHere
   DB_NAME: fidelight
   AUTH_DB_NAME: filelightAuth
   # e.g. my-awesome-project:us-central1:my-cloud-sql-instance
   CLOUD_SQL_CONNECTION_NAME: fidelightapp-314712:europe-west1:fidelight
+  DEFAULT_AUTH_SERVER: https://fidelightapp-314712.ew.r.appspot.com/
+  DEFAULT_TASKS_SERVER: https://fidelightapp-314712.ew.r.appspot.com/
+  ACCESS_TOKEN_SECRET: insertSecretThere
+  REFRESH_TOKEN_SECRET: insertSecretHere
+  GOOGLE_CLIENT_ID: insertClientIdHere
+  GOOGLE_SECRET: insertSecretHere
+  GOOGLE_REDIRECT_URI: http://localhost:8001/api/user/gauth/authenticate/
+
 
 beta_settings:
   # The connection name of your instance, available by using

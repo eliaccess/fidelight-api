@@ -55,7 +55,7 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
                                 }
                             });
                         } else {
-                            res.status(200).jsonp({transaction: rows[0].id, discount:null, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date});
+                            res.status(200).jsonp({transaction: rows[0].id, discount: null, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date});
                         }
                     } else {
                         res.status(404).jsonp("Transaction not found!");
@@ -76,7 +76,7 @@ router.get('/v1/transaction', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type == 'company') {
-            db.query("SELECT transaction.id AS id, user.surname AS surname, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN user ON user.id = transaction.user WHERE transaction.company = ? ORDER BY transaction.date DESC", [req.decoded.id], (err, rows, result) => {
+            db.query("SELECT transaction.id AS id, user.surname AS surname, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN user ON user.id = transaction.user WHERE transaction.company = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id], (err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp(err);
                     next(err);

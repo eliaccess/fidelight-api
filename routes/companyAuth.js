@@ -49,7 +49,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(410).jsonp("Your email address is already registered !");
+                    res.status(409).jsonp("Your email address is already registered !");
                 } else {
                     const BCRYPT_SALT_ROUNDS = 12;
                     logGened = logGen(10);                    

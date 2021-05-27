@@ -11,6 +11,10 @@ let cmpBal = [
 
 router.get('/v1/user/balance/:companyId', cmpBal, (req, res, next) => {
     try {
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp('Access forbidden');
+            return 2;
+        }
         validationResult(req).throw();
         db.query("SELECT * FROM balance WHERE id = ? AND companyId = ?", [req.decoded.id, req.params.companyId], (err, rows, result) => {
             if (err) {

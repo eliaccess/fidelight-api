@@ -9,10 +9,11 @@ const midWare = require('../modules/middleware');
 
 let passAuth = [
     check('password').exists(),
-    check('previous_password').exists()
+    check('previous_password').exists(),
+    midWare.checkToken
 ];
 
-router.put('/v1/user/password', passAuth, midWare.checkToken, (req, res, next) => {
+router.put('/v1/user/password', passAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');
@@ -38,7 +39,6 @@ router.put('/v1/user/password', passAuth, midWare.checkToken, (req, res, next) =
                                 res.status(410).jsonp(iErr);
                                 next(iErr);
                             } else {
-                                //const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
                                 res.status(200).jsonp({"message": "Successfully changed"});
                             }
                         });
@@ -255,7 +255,7 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
             res.status(403).jsonp('Access forbidden');
             return 2;
         }
-        db.query("SELECT company.id FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
+        db.query("SELECT company.id AS company FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
