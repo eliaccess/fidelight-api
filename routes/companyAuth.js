@@ -39,7 +39,7 @@ let regValidate = [
     check('country').exists()
 ];
 
-router.post('/api/company/register', regValidate, (req, res, next) => {
+router.post('/api/v1/company/register', regValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
         
@@ -124,7 +124,7 @@ let tokenAuth = [
     check('password').exists()
 ];
 
-router.post('/api/company/login', tokenAuth, (req, res, next) => {
+router.post('/api/v1/company/login', tokenAuth, (req, res, next) => {
     try {
         validationResult(req).throw();
 
@@ -177,7 +177,7 @@ let refToken = [
     check('refresh_token').exists()
 ];
 
-router.post('/api/company/token/', refToken, (req, res, next) => {
+router.post('/api/v1/company/token/', refToken, (req, res, next) => {
     try{
         dbAuth.query("SELECT id FROM company_refresh_token WHERE refresh_token = ?", [req.body.refresh_token], (err, rows, results) => {
             if (err) {

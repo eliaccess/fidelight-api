@@ -12,7 +12,7 @@ let passAuth = [
     check('previous_password').exists()
 ];
 
-router.put('/api/user/password', passAuth, midWare.checkToken, (req, res, next) => {
+router.put('/api/v1/user/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');
@@ -55,7 +55,7 @@ router.put('/api/user/password', passAuth, midWare.checkToken, (req, res, next) 
     }
 });
 
-router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/user/profile', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');
@@ -79,7 +79,7 @@ router.get('/api/user/profile', midWare.checkToken, (req, res, next) => {
 });
 
 
-router.put('/api/user/profile', midWare.checkToken, (req, res, next) => {
+router.put('/api/v1/user/profile', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');
@@ -105,7 +105,7 @@ router.put('/api/user/profile', midWare.checkToken, (req, res, next) => {
     }
 });
 
-router.delete("/api/user/register", midWare.checkToken, (req, res, next) => {
+router.delete("/api/v1/user/register", midWare.checkToken, (req, res, next) => {
     try {
         let regData = {
             surname: "",
@@ -151,7 +151,7 @@ let likeAuth = [
     midWare.checkToken
 ];
 
-router.post('/api/user/like/', likeAuth, (req, res, next) => {
+router.post('/api/v1/user/like/', likeAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');
@@ -219,7 +219,7 @@ router.post('/api/user/like/', likeAuth, (req, res, next) => {
     }
 });
 
-router.delete('/api/user/like/:companyId', midWare.checkToken, (req, res, next) => {
+router.delete('/api/v1/user/like/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');
@@ -249,7 +249,7 @@ router.delete('/api/user/like/:companyId', midWare.checkToken, (req, res, next) 
     }
 });
 
-router.get('/api/user/like/', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/user/like/', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp('Access forbidden');

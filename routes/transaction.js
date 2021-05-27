@@ -9,7 +9,7 @@ let traVry = [
 ];
 
 
-router.get('/api/transaction/:transId', traVry, (req, res, next) => {
+router.get('/api/v1/transaction/:transId', traVry, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type == 'company') {
@@ -72,7 +72,7 @@ router.get('/api/transaction/:transId', traVry, (req, res, next) => {
 });
 
 
-router.get('/api/transaction', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/transaction', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type == 'company') {
@@ -119,7 +119,7 @@ router.get('/api/transaction', midWare.checkToken, (req, res, next) => {
 });
 
 
-router.delete('/api/transaction/:transactionId', midWare.checkToken, (req, res, next) => {
+router.delete('/api/v1/transaction/:transactionId', midWare.checkToken, (req, res, next) => {
     try {
         /* Steps :
         - see if transaction exists

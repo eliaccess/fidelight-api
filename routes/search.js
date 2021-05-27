@@ -95,7 +95,7 @@ router.get('/api/search/discount/c/h/:city', (req, res, next) => {
 
 /* Company Search */
 /* Get all companies from a city */
-router.get('/api/search/company/parameters', (req, res, next) => {
+router.get('/api/v1/search/company/parameters', (req, res, next) => {
     try {
         /* supported parameters :
          * - name : name / part of the name of the company

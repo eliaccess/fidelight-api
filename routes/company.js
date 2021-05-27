@@ -37,7 +37,7 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-router.get('/api/company/type', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/company/type', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM company_type", (err, rows, result) => {
             if (err) {
@@ -97,7 +97,7 @@ function checkScheduleFormat(data){
 }
 
 // This route works as POST + PUT
-router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
+router.post('/api/v1/company/schedule/', postSchedule, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -184,7 +184,7 @@ router.post('/api/company/schedule/', postSchedule, (req, res, next) => {
     }
 });
 
-router.delete('/api/company/schedule/:day', midWare.checkToken, (req, res, next) => {
+router.delete('/api/v1/company/schedule/:day', midWare.checkToken, (req, res, next) => {
     validationResult(req).throw();
         if(req.decoded.type != 'company'){
             res.status(403).jsonp('Access forbidden');
@@ -208,7 +208,7 @@ router.delete('/api/company/schedule/:day', midWare.checkToken, (req, res, next)
         }
 })
 
-router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
+router.post(('/api/v1/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -263,7 +263,7 @@ router.post(('/api/company/logo/'), upload.single('logo'), midWare.checkToken, (
     }
 });
 
-router.delete(('/api/company/logo/'), midWare.checkToken, (req, res, next) => {
+router.delete(('/api/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -306,7 +306,7 @@ router.delete(('/api/company/logo/'), midWare.checkToken, (req, res, next) => {
     }
 });
 
-router.post(('/api/company/background/'), upload.single('background_picture'), midWare.checkToken, (req, res, next) => {
+router.post(('/api/v1/company/background/'), upload.single('background_picture'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -361,7 +361,7 @@ router.post(('/api/company/background/'), upload.single('background_picture'), m
     }
 });
 
-router.delete(('/api/company/background/'), midWare.checkToken, (req, res, next) => {
+router.delete(('/api/v1/company/background/'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -405,7 +405,7 @@ router.delete(('/api/company/background/'), midWare.checkToken, (req, res, next)
 });
 
 /* IF ADDING PICTURES IN DISCOUNTS THEN NEEDS TO DELETE THEM NOW */
-router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
+router.delete('/api/v1/company/register', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -569,7 +569,7 @@ router.delete('/api/company/register', midWare.checkToken, (req, res, next) => {
     }
 });
 
-router.get('/api/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
             db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
@@ -667,7 +667,7 @@ let updateProf = [
     midWare.checkToken
 ];
 
-router.put('/api/company/profile/', updateProf, (req, res, next) => {
+router.put('/api/v1/company/profile/', updateProf, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -715,7 +715,7 @@ let passAuth = [
     check('previous_password').exists()
 ];
 
-router.put('/api/company/password', passAuth, midWare.checkToken, (req, res, next) => {
+router.put('/api/v1/company/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){

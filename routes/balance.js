@@ -9,7 +9,7 @@ let cmpBal = [
     midWare.checkToken
 ];
 
-router.get('/user/balance/:companyId', cmpBal, (req, res, next) => {
+router.get('/api/v1/user/balance/:companyId', cmpBal, (req, res, next) => {
     try {
         validationResult(req).throw();
         db.query("SELECT * FROM balance WHERE id = ? AND companyId = ?", [req.decoded.id, req.params.companyId], (err, rows, result) => {

@@ -38,7 +38,7 @@ function qrGen(length) {
     return result;
 }
 
-router.post("/api/user/register", regValidate, async (req, res, next) => {
+router.post("/api/v1/user/register", regValidate, async (req, res, next) => {
     try {
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
@@ -245,7 +245,7 @@ let refToken = [
     check('refresh_token').exists()
 ];
 
-router.post('/api/user/token/', refToken, (req, res, next) => {
+router.post('/api/v1/user/token/', refToken, (req, res, next) => {
     try{
         dbAuth.query("SELECT id FROM user_refresh_token WHERE refresh_token = ?", [req.body.refresh_token], (err, rows, results) => {
             if (err) {
@@ -269,7 +269,7 @@ let logAuth = [
     check('password').exists()
 ];
 
-router.post('/api/user/login', logAuth, (req, res, next) => {
+router.post('/api/v1/user/login', logAuth, (req, res, next) => {
     try {
         validationResult(req).throw();
         db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {

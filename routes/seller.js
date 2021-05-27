@@ -5,6 +5,7 @@ const midWare = require('../modules/middleware');
 const bcrypt = require('bcryptjs');
 const { check, validationResult } = require('express-validator');
 
+// THIS FUNCTIONNALITY IS NOT SUPPORTED IN THE V1
 
 let sellerVfy = [
     check('company').exists(),
@@ -13,7 +14,7 @@ let sellerVfy = [
     midWare.checkToken
 ];
 
-router.post('/api/company/seller', sellerVfy, (req, res, next) => {
+router.post('/api/v1/company/seller', sellerVfy, (req, res, next) => {
     try {
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
@@ -37,7 +38,7 @@ router.post('/api/company/seller', sellerVfy, (req, res, next) => {
 });
 
 
-router.get('/api/company/seller/:companyId', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/company/seller/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM seller WHERE companyId = ?", [req.params.companyId], (err, rows, result) => {
             if (err) {
@@ -57,7 +58,7 @@ router.get('/api/company/seller/:companyId', midWare.checkToken, (req, res, next
 });
 
 
-router.delete('/api/company/seller/:sellerId', midWare.checkToken, (req, res, next) => {
+router.delete('/api/v1/company/seller/:sellerId', midWare.checkToken, (req, res, next) => {
     try {
         db.query("DELETE FROM seller WHERE id = ?", [req.params.sellerId], (err, rows, result) => {
             if (err) {
@@ -73,7 +74,7 @@ router.delete('/api/company/seller/:sellerId', midWare.checkToken, (req, res, ne
 });
 
 
-router.get('/api/company/statistics/seller', midWare.checkToken, (req, res, next) => {
+router.get('/api/v1/company/statistics/seller', midWare.checkToken, (req, res, next) => {
     try {
         db.query("SELECT * FROM seller WHERE companyId = ?", [req.decoded.id], (err, rows, result) => {
             if (err) {
