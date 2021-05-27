@@ -1,14 +1,13 @@
 const mysql = require('mysql');
-
-const con2 = new mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database: 'fidelightAuth' 
+const dbSocketPath = process.env.DB_SOCKET_PATH || '/cloudsql';
+const con2 = new mysql.createPool({
+    user: process.env.DB_USER, // e.g. 'my-db-user'
+    password: process.env.DB_PASS, // e.g. 'my-db-password'
+    database: process.env.AUTH_DB_NAME, // e.g. 'my-database'
+    // If connecting via unix domain socket, specify the path
+    socketPath: `${dbSocketPath}/${process.env.CLOUD_SQL_CONNECTION_NAME}`,
+    // Specify additional properties here.
 });
 
-con2.connect(function(err) {
-     if (err) throw err;
-});
 
 module.exports = con2;

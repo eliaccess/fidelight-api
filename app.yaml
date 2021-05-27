@@ -1,13 +1,19 @@
 
 runtime: nodejs
 env: flex
-
+manual_scaling:
+  instances: 1
+resources:
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
 # The following env variables may contain sensitive information that grants
 # anyone access to your database. Do not add this file to your source control.
 env_variables:
   DB_USER: root
   DB_PASS: Password123
   DB_NAME: fidelight
+  AUTH_DB_NAME: filelightAuth
   # e.g. my-awesome-project:us-central1:my-cloud-sql-instance
   CLOUD_SQL_CONNECTION_NAME: fidelightapp-314712:europe-west1:fidelight
 
