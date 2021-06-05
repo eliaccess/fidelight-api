@@ -8,73 +8,73 @@ const { check, validationResult } = require('express-validator');
 const midWare = require('../modules/middleware');
 
 let passAuth = [
-    check('password').exists(),
-    check('previous_password').exists(),
+    check('newPassword').exists(),
+    check('oldPassword').exists(),
     midWare.checkToken
 ];
 
 router.put('/v1/user/password', passAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
         validationResult(req).throw();
         const BCRYPT_SALT_ROUNDS = 12;
         let regData = {
-            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+            hash_pwd: bcrypt.hashSync(req.body.newPassword, BCRYPT_SALT_ROUNDS),
             salt: BCRYPT_SALT_ROUNDS
         };
 
         db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
                     hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                    if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
+                    if (bcrypt.compareSync(req.body.oldPassword, hashed_pwd)) {
                         db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
                             if (iErr) {
-                                res.status(410).jsonp(iErr);
+                                res.status(410).jsonp({msg:iErr});
                                 next(iErr);
                             } else {
-                                res.status(200).jsonp({"message": "Successfully changed"});
+                                res.status(200).jsonp({msg: "Password successfully modified!"});
                             }
                         });
                     } else {
-                        res.status(410).jsonp("Wrong old password!");
+                        res.status(410).jsonp({msg:"Wrong old password!"});
                     }
                 } else {
-                    res.status(410).jsonp("Authentication failed!");
+                    res.status(410).jsonp({msg:"Authentication failed!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
 router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
         db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(200).jsonp({surname: rows[0].surname, name: rows[0].name, phone: rows[0].phone, email: rows[0].email, birthdate: rows[0].birthdate});
+                    res.status(200).jsonp({data:{surname: rows[0].surname, name: rows[0].name, phone: rows[0].phone, email: rows[0].email, birthdate: rows[0].birthdate}, msg:"success"});
                 } else {
-                    res.status(404).jsonp("Profile not found!");
+                    res.status(404).jsonp({msg:"Profile not found!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -82,7 +82,7 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
 router.put('/v1/user/profile', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
         let usrData = {
@@ -94,14 +94,14 @@ router.put('/v1/user/profile', midWare.checkToken, (req, res, next) => {
         };
         db.query("UPDATE user SET ? WHERE id = ?", [usrData, req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
-                res.status(200).jsonp("Profile updated successfully!");
+                res.status(200).jsonp({msg:"Profile updated successfully!"});
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -121,28 +121,28 @@ router.delete("/v1/user/register", midWare.checkToken, (req, res, next) => {
 
         db.query("DELETE FROM balance WHERE user = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             }
         });
 
         db.query("DELETE FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             }
         });
 
         db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
-                res.status(200).jsonp("Account Deleted Successfully!");
+                res.status(200).jsonp({msg:"Account successfully deleted!"});
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -154,18 +154,18 @@ let likeAuth = [
 router.post('/v1/user/like/', likeAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
         db.query("SELECT * FROM company WHERE id = ?", [req.body.company], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
                     db.query("SELECT * FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
                         if (err) {
-                            res.status(410).jsonp(err);
+                            res.status(410).jsonp({msg:err});
                             next(err);
                         } else {
                             if(rows[0]){
@@ -175,7 +175,7 @@ router.post('/v1/user/like/', likeAuth, (req, res, next) => {
                                         if(element.company == req.body.company) alreadyLiked = 1;
                                     });
 
-                                    if(alreadyLiked == 1) res.status(200).jsonp("You already liked this company!");
+                                    if(alreadyLiked == 1) res.status(200).jsonp({msg:"You already liked this company!"});
                                     else{
                                         let likeData = {
                                             user: req.decoded.id,
@@ -183,15 +183,15 @@ router.post('/v1/user/like/', likeAuth, (req, res, next) => {
                                         };
                                         db.query("INSERT INTO user_like SET ?", [likeData], (err, rows, results) => {
                                             if (err) {
-                                                res.status(410).jsonp(err);
+                                                res.status(410).jsonp({msg:err});
                                                 next(err);
                                             } else {
-                                                res.status(200).jsonp("Company successfully added to your likes!");
+                                                res.status(200).jsonp({msg:"Company successfully added to your likes!"});
                                             }
                                         });
                                     }
                                 } else {
-                                    res.status(409).jsonp("You have reached the max likes amount (20)!");
+                                    res.status(409).jsonp({msg:"You have reached the max likes amount (20)!"});
                                 }
                             } else {
                                 let likeData = {
@@ -200,34 +200,34 @@ router.post('/v1/user/like/', likeAuth, (req, res, next) => {
                                 };
                                 db.query("INSERT INTO user_like SET ?", [likeData], (err, rows, results) => {
                                     if (err) {
-                                        res.status(410).jsonp(err);
+                                        res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
-                                        res.status(200).jsonp("Company successfully added to your likes!");
+                                        res.status(200).jsonp({msg:"Company successfully added to your likes!"});
                                     }
                                 });
                             }
                         }
                     });
                 } else {
-                    res.status(404).jsonp("Company not found!");
+                    res.status(404).jsonp({msg:"Company not found!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
 router.delete('/v1/user/like/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
         db.query("SELECT * FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.params.companyId], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if(!rows[0]){
@@ -235,36 +235,36 @@ router.delete('/v1/user/like/:companyId', midWare.checkToken, (req, res, next) =
                 } else {
                     db.query("DELETE FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.params.companyId], (err, rows, results) => {
                         if (err) {
-                            res.status(410).jsonp(err);
+                            res.status(410).jsonp({msg:err});
                             next(err);
                         } else {
-                            res.status(200).jsonp("Company successfully removed from your likes!");
+                            res.status(200).jsonp({msg:"Company successfully removed from your likes!"});
                         }
                     });
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
 router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
         db.query("SELECT company.id AS company FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
-                res.status(200).jsonp(rows);
+                res.status(200).jsonp({data:rows, msg:"success"});
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 

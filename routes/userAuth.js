@@ -60,7 +60,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
         //Verifying that the user doesn't exist in table then inserting the data
         db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -68,13 +68,13 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                 } else {
                     db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
                         if (err) {
-                            res.status(410).jsonp(err);
+                            res.status(410).jsonp({msg:err});
                             next(err);
                         } else {
                             //Adding the user to default user type
                             db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
                                 if (err) {
-                                    res.status(410).jsonp(err);
+                                    res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
                                     let regData2 = {
@@ -83,7 +83,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                     };
                                     db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
                                         if (err) {
-                                            res.status(410).jsonp(err);
+                                            res.status(410).jsonp({msg:err});
                                             next(err);
                                         }
                                         else{
@@ -95,10 +95,10 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                             let token = getAccessToken(result.insertId, 'user');
                                             dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                                 if(err){
-                                                    res.status(200).jsonp({id: result.insertId, qr_key: qrCode + '.' + result.insertId, access_token: token});
+                                                    res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:"success"});
                                                     next(err);
                                                 } else {
-                                                    res.status(200).jsonp({id: result.insertId, qrCode: qrCode + '.' + result.insertId, access_token: token, refresh_token: refToken});
+                                                    res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:"success"});
                                                 }
                                             });
                                         }
@@ -111,7 +111,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -242,7 +242,7 @@ router.get('/api/user/gauth/authenticate/', exports.getGmailUserInfo);
 router.get('/api/user/gauth', exports.requestGmailAuth);
 
 let refToken = [
-    check('refresh_token').exists()
+    check('refreshToken').exists()
 ];
 
 router.post('/v1/user/token/', refToken, (req, res, next) => {
@@ -253,14 +253,14 @@ router.post('/v1/user/token/', refToken, (req, res, next) => {
                 next(err);
             } else {
                 if(rows[0]){
-                    res.status(200).jsonp({access_token: getAccessToken(rows[0].id, 'user')});
+                    res.status(200).jsonp({data:{accessToken: getAccessToken(rows[0].id, 'user')}, msg:"success"});
                 } else {
-                    res.status(403).jsonp("Refresh token is not valid.");
+                    res.status(403).jsonp({msg:"Refresh token is not valid."});
                 }
             }
         });
     } catch(err){
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -274,7 +274,7 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
         validationResult(req).throw();
         db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -283,10 +283,10 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
                         const token = getAccessToken(rows[0].id, 'user');
                         dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
-                                if(rows2[0]) res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key, access_token: token, refresh_token: rows2[0].refresh_token});
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"success"});
                                 else{
                                     refToken = getRefreshToken(rows[0].id, 'user');
                                     let saveRefToken = {
@@ -295,25 +295,25 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
                                     }
                                     dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            res.status(410).jsonp(err);
+                                            res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, access_token: token, refresh_token: refToken});
+                                            res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, accessToken: token, refreshToken: refToken}, msg:"success"});
                                         }
                                     });
                                 }
                             }
                         });
                     } else {
-                        res.status(410).jsonp("Authentication failed!");
+                        res.status(410).jsonp({msg:"Authentication failed!"});
                     }
                 } else {
-                    res.status(410).jsonp("Authentication failed!");
+                    res.status(410).jsonp({msg:"Authentication failed!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 

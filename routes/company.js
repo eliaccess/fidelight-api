@@ -45,9 +45,9 @@ router.get('/v1/company/type', midWare.checkToken, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(200).jsonp(rows);
+                    res.status(200).jsonp({data:rows, msg: "success"});
                 } else {
-                    res.status(410).jsonp("Company type not found!");
+                    res.status(410).jsonp({msg "No company type found!"});
                 }
             }
         });
@@ -89,7 +89,7 @@ function checkScheduleFormat(data){
         else if(!element.day || typeof element.day != 'number' || element.day > 7 || element.day <= 0) checkingParts = false;
         else if(daysProgrammed.includes(element.day)) checkingParts = false;
         //else if(!element.open_am || !element.close_am || !element.open_pm || !element.close_pm) checkingParts = false;
-        else if((element.open_am && !checkHourFormat(element.open_am)) || (element.close_am && !checkHourFormat(element.close_am)) || (element.open_pm && !checkHourFormat(element.open_pm)) || (element.close_pm && !checkHourFormat(element.close_pm))) checkingParts = false;
+        else if((element.openAm && !checkHourFormat(element.openAm)) || (element.closeAm && !checkHourFormat(element.closeAm)) || (element.openPm && !checkHourFormat(element.openPm)) || (element.closePm && !checkHourFormat(element.closePm))) checkingParts = false;
         daysProgrammed.push(element.day);
     });
     if(!checkingParts) return false;
@@ -101,19 +101,19 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows2, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg: err});
                     next(err);
                 } else if (rows2[0]){
                     if(!checkScheduleFormat(req.body.schedule)) res.status(400).jsonp('Error in the request format');
                     else {
                         db.query("SELECT * FROM schedule WHERE company_location = ?", [rows2[0].id], (err, rows, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg: err});
                                 next(err);
                             }
                             else {
@@ -125,10 +125,10 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
                                     let scheDataDay = {
                                         company_location: rows2[0].id,
                                         day: element.day,
-                                        open_am: element.open_am,
-                                        close_am: element.close_am,
-                                        open_pm: element.open_pm,
-                                        close_pm: element.close_pm
+                                        open_am: element.openAm,
+                                        close_am: element.closeAm,
+                                        open_pm: element.openPm,
+                                        close_pm: element.closePm
                                     };
                                     scheData.push(scheDataDay);
                                     dayToAdd.push(element.day);
@@ -145,14 +145,14 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
                                         if(doesExist != -1) {
                                             db.query("UPDATE schedule SET ? WHERE id = ?", [element, doesExist], (err, rows, results) => {
                                                 if(err){
-                                                    res.status(410).jsonp(err);
+                                                    res.status(410).jsonp({msg:err});
                                                     next(err);
                                                 }
                                             });
                                         } else {
                                             db.query("INSERT INTO schedule SET ?", [element], (err, rows, results) => {
                                                 if(err){
-                                                    res.status(410).jsonp(err);
+                                                    res.status(410).jsonp({msg:err});
                                                     next(err);
                                                 }
                                             });
@@ -169,13 +169,13 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
                                             }
                                         });
                                     });
-                                    res.status(200).jsonp("Schedule added successfully");
+                                    res.status(200).jsonp({msg: "Schedule added successfully"});
                                 }
                             }
                         });
                     }
                 } else {
-                    res.status(404).jsonp("You have no company location!");
+                    res.status(404).jsonp({msg: "You have no company location!"});
                 }
             });
         }
@@ -187,7 +187,7 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
 router.delete('/v1/company/schedule/:day', midWare.checkToken, (req, res, next) => {
     validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows, results) => {
@@ -200,7 +200,7 @@ router.delete('/v1/company/schedule/:day', midWare.checkToken, (req, res, next) 
                             res.status(410).jsonp(err);
                             next(err);
                         } else {
-                            res.status(200).jsonp("Schedule deleted successfully!")
+                            res.status(200).jsonp({msg: "Schedule deleted successfully!"})
                         }
                     });
                 }
@@ -212,29 +212,29 @@ router.post(('/v1/company/logo/'), upload.single('logo'), midWare.checkToken, (r
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             if(req.file){
                 /* checking of the company exists */
                 db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                     if (err) {
-                        res.status(410).jsonp(err);
+                        res.status(410).jsonp({msg:err});
                         next(err);
                     } else if (rows[0]){
                         /* if a logo already exists, then we replace it, else we just create one */
                         if(rows[0].logo_link){
                             fs.unlink(rows[0].logo_link, function(err, rows){
                                 if(err && err.code !== "ENOENT"){
-                                    res.status(410).jsonp(err);
+                                    res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
                                     db.query("UPDATE company SET logo_link = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
                                         if (err) {
-                                            res.status(410).jsonp(err);
+                                            res.status(410).jsonp({msg: err});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp("Logo added successfully!");
+                                            res.status(200).jsonp({msg:"Logo added successfully!"});
                                         }
                                     });
                                 }
@@ -242,19 +242,19 @@ router.post(('/v1/company/logo/'), upload.single('logo'), midWare.checkToken, (r
                         } else {
                             db.query("UPDATE company SET logo_link = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
                                 if (err) {
-                                    res.status(410).jsonp(err);
+                                    res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    res.status(200).jsonp('Logo added successfully!');
+                                    res.status(200).jsonp({msg:'Logo added successfully!'});
                                 }
                             });
                         }
                     } else {
-                        res.status(410).jsonp('Company does not exist!');
+                        res.status(410).jsonp({msg:'Company does not exist!'});
                     }
                 });
             } else {
-                res.status(400).jsonp('The file needs to be PNG, JPEG or JPG');
+                res.status(400).jsonp({msg:'The file needs to be PNG, JPEG or JPG'});
             }
         }
     } catch (err) {
@@ -267,72 +267,72 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else if (rows[0]){
                     /* if a logo already exists, then we replace it, else we just create one */
                     if(rows[0].logo_link){
                         fs.unlink(rows[0].logo_link, function(err, rows){
                             if(err && err.code !== "ENOENT"){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
                                 db.query("UPDATE company SET logo_link = '' WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                                     if (err) {
-                                        res.status(410).jsonp(err);
+                                        res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
-                                        res.status(200).jsonp('Logo deleted successfully!');
+                                        res.status(200).jsonp({msg:'Logo deleted successfully!'});
                                     }
                                 });
                             }
                         });
                     } else {
-                        res.status(200).jsonp('No logo to delete !');
+                        res.status(200).jsonp({msg:'No logo to delete !'});
                     }
                 } else {
-                    res.status(410).jsonp('Company does not exist!');
+                    res.status(410).jsonp({msg:'Company does not exist!'});
                 }
             });
         }
     } catch (err) {
         console.log(err);
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
-router.post(('/v1/company/background/'), upload.single('background_picture'), midWare.checkToken, (req, res, next) => {
+router.post(('/v1/company/background/'), upload.single('backgroundPicture'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             if(req.file){
                 /* checking of the company exists */
                 db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                     if (err) {
-                        res.status(410).jsonp(err);
+                        res.status(410).jsonp({msg:err});
                         next(err);
                     } else if (rows[0]){
                         /* if a background picture already exists, then we replace it, else we just create one */
                         if(rows[0].background_picture){
                             fs.unlink(rows[0].background_picture, function(err, rows){
                                 if(err && err.code !== "ENOENT"){
-                                    res.status(410).jsonp(err);
+                                    res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
                                     db.query("UPDATE company SET background_picture = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
                                         if (err) {
-                                            res.status(410).jsonp(err);
+                                            res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp("Background picture added successfully!");
+                                            res.status(200).jsonp({msg:"Background picture added successfully!"});
                                         }
                                     });
                                 }
@@ -340,24 +340,24 @@ router.post(('/v1/company/background/'), upload.single('background_picture'), mi
                         } else {
                             db.query("UPDATE company SET background_picture = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
                                 if (err) {
-                                    res.status(410).jsonp(err);
+                                    res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    res.status(200).jsonp("Background picture added successfully!");
+                                    res.status(200).jsonp({msg:"Background picture added successfully!"});
                                 }
                             });
                         }
                     } else {
-                        res.status(410).jsonp('Company does not exist!');
+                        res.status(410).jsonp({msg:'Company does not exist!'});
                     }
                 });
             } else {
-                res.status(400).jsonp('The file needs to be PNG, JPEG or JPG');
+                res.status(400).jsonp({msg:'The file needs to be PNG, JPEG or JPG'});
             }
         }
     } catch (err) {
         console.log(err);
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -365,42 +365,42 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else if (rows[0]){
                     /* if a background picture already exists, then we replace it, else we just create one */
                     if(rows[0].background_picture){
                         fs.unlink(rows[0].background_picture, function(err, rows){
                             if(err && err.code !== "ENOENT"){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
                                 db.query("UPDATE company SET background_picture = '' WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                                     if (err) {
-                                        res.status(410).jsonp(err);
+                                        res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
-                                        res.status(200).jsonp('Background picture deleted successfully!');
+                                        res.status(200).jsonp({msg:'Background picture deleted successfully!'});
                                     }
                                 });
                             }
                         });
                     } else {
-                        res.status(200).jsonp('No background picture to delete !');
+                        res.status(200).jsonp({msg:'No background picture to delete !'});
                     }
                 } else {
-                    res.status(410).jsonp('Company does not exist!');
+                    res.status(410).jsonp({msg:'Company does not exist!'});
                 }
             });
         }
     } catch (err) {
         console.log(err);
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -409,28 +409,28 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else if (rows[0]){
                     if(rows[0].active == 0){
-                        res.status(410).jsonp("Inactive accounts can not be deleted!");
+                        res.status(410).jsonp({msg:"Inactive accounts can not be deleted!"});
                     } else {
                         /* Deleting the logo and background picture of the company */
                         fs.unlink(rows[0].logo_link, function(err, rows){
                             if(err && err.code !== "ENOENT"){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             }
                         });
 
                         fs.unlink(rows[0].background_picture, function(err, rows){
                             if(err && err.code !== "ENOENT"){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             }
                         });
@@ -438,7 +438,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                         /* Deleting the company from users liked companies */
                         db.query("DELETE FROM user_like WHERE company = ?", [req.decoded.id], (err, rows, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             }
                         });
@@ -446,14 +446,14 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                         /* Deleting company private information */
                         db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             }
                             else{
                                 /* Deleting locations photo locations */
                                 db.query("SELECT id FROM company_location WHERE company = ?", [req.decoded.id], (err, rows2, results) => {
                                     if(err){
-                                        res.status(410).jsonp(err);
+                                        res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
                                         if(rows2){
@@ -461,14 +461,14 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                                 /* Deleting the company schedule */
                                                 db.query("DELETE FROM schedule WHERE company_location = ?", [line.id], (err, rows, results) => {
                                                     if(err){
-                                                        res.status(410).jsonp(err);
+                                                        res.status(410).jsonp({msg:err});
                                                         next(err);
                                                     }
                                                 });
                                                 /* Getting every picture link to delete them */
                                                 db.query("SELECT picture_link FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows3, results) => {
                                                     if(err){
-                                                        res.status(410).jsonp(err);
+                                                        res.status(410).jsonp({msg:err});
                                                         next(err);
                                                     } else {
                                                         if(rows3){
@@ -476,12 +476,12 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                                                 /* Deleting every picture */
                                                                 fs.unlink(picture.link_picture, function(err, rows){
                                                                     if(err && err.code !== "ENOENT"){
-                                                                        res.status(410).jsonp(err);
+                                                                        res.status(410).jsonp({msg:err});
                                                                         next(err);
                                                                     } else {
                                                                         db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows, results) => {
                                                                             if(err){
-                                                                                res.status(410).jsonp(err);
+                                                                                res.status(410).jsonp({msg:err});
                                                                                 next(err);
                                                                             }
                                                                         });
@@ -497,31 +497,31 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                         /* removing company location private information */
                                         db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], (err, rows, results) => {
                                             if(err){
-                                                res.status(410).jsonp(err);
+                                                res.status(410).jsonp({msg:err});
                                                 next(err);
                                             } else {
                                                 /* Deleting users balances in that company */
                                                 db.query("DELETE FROM balance WHERE company = ?", [req.decoded.id], (err, rows, results) => {
                                                     if(err){
-                                                        res.status(410).jsonp(err);
+                                                        res.status(410).jsonp({msg:err});
                                                         next(err);
                                                     } else {
                                                         /* Deleting discounts and discounts information from the company */
                                                         db.query("SELECT * FROM discount WHERE company = ? AND active = 1", [req.decoded.id], (err, results) => {
                                                             if(err){
-                                                                res.status(410).jsonp(err);
+                                                                res.status(410).jsonp({msg:err});
                                                                 next(err);
                                                             } else {
                                                                 if(results[0]){
                                                                     results.forEach(element => {
                                                                         db.query("DELETE FROM discount_repetition WHERE discount = ?", [element.id], (err, result) => {
                                                                             if (err) {
-                                                                                res.status(410).jsonp(err);
+                                                                                res.status(410).jsonp({msg:err});
                                                                                 next(err);
                                                                             } else {
                                                                                 db.query("DELETE FROM discount_value WHERE discount = ?", [element.id], (err, result) => {
                                                                                     if (err) {
-                                                                                        res.status(410).jsonp(err);
+                                                                                        res.status(410).jsonp({msg:err});
                                                                                         next(err);
                                                                                     } else {
                                                                                         const dstInfo = {
@@ -533,10 +533,10 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                                                                         }
                                                                                         db.query("UPDATE discount SET ? WHERE id = ?", [dstInfo, element.id], (err, result) => {
                                                                                             if (err) {
-                                                                                                res.status(410).jsonp(err);
+                                                                                                res.status(410).jsonp({msg:err});
                                                                                                 next(err);
                                                                                             } else {
-                                                                                                res.status(200).jsonp("Account deleted successfully!");
+                                                                                                res.status(200).jsonp({msg:"Account deleted successfully!"});
                                                                                             }
                                                                                         });
                                                                                     }
@@ -545,7 +545,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                                                         });
                                                                     });
                                                                 } else {
-                                                                    res.status(200).jsonp("Account deleted successfully!");
+                                                                    res.status(200).jsonp({msg:"Account deleted successfully!"});
                                                                     return 2;
                                                                 }
                                                             }
@@ -560,12 +560,12 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                         });
                     }
                 } else {
-                    res.status(410).jsonp("Authentication failed!");
+                    res.status(410).jsonp({msg:"Authentication failed!"});
                 }
             });
         }
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -574,7 +574,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
         if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
             db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -595,26 +595,26 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         /* Adding the schedule of the company if it exists */
                         db.query("SELECT day, open_am, close_am, open_pm, close_pm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
                                 if(rows2[0]){
                                     companyInfo.schedule = rows2;
-                                    res.status(200).jsonp(companyInfo);
+                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
                                 } else {
-                                    res.status(200).jsonp(companyInfo);
+                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
                                 }
                             }
                         });
                     } else {
-                        res.status(404).jsonp("Profile not found!");
+                        res.status(404).jsonp({msg:"Profile not found!"});
                     }
                 }
             });
         } else {
             db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -633,25 +633,25 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         /* Adding the schedule of the company if it exists */
                         db.query("SELECT day, am, open, close FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
                                 if(rows2[0]){
                                     companyInfo.schedule = rows2;
-                                    res.status(200).jsonp(companyInfo);
+                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
                                 } else {
-                                    res.status(200).jsonp(companyInfo);
+                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
                                 }
                             }
                         });
                     } else {
-                        res.status(404).jsonp("Profile not found!");
+                        res.status(404).jsonp({msg:"Profile not found!"});
                     }
                 }
             });
         }
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -662,8 +662,8 @@ let updateProf = [
     check('description').exists(),
     check('country').exists(),
     check('city').exists(),
-    check('street_name').exists(),
-    check('street_number').exists(),
+    check('streetName').exists(),
+    check('streetNumber').exists(),
     midWare.checkToken
 ];
 
@@ -671,7 +671,7 @@ router.put('/v1/company/profile/', updateProf, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             validationResult(req).throw();
@@ -684,78 +684,77 @@ router.put('/v1/company/profile/', updateProf, (req, res, next) => {
             cLocInfo = {
                 country: req.body.country,
                 city: req.body.city,
-                street_name: req.body.street_name,
-                street_number: req.body.street_number
+                street_name: req.body.streetName,
+                street_number: req.body.streetNumber
             };
 
             db.query("UPDATE company SET ? WHERE id = ?", [companyInfo, req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else {
                     db.query("UPDATE company_location SET ? WHERE company = ?", [cLocInfo, req.decoded.id], (err, rows, results) => {
                         if (err) {
-                            res.status(410).jsonp(err);
+                            res.status(410).jsonp({msg:err});
                             next(err);
                         } else {
-                            res.status(200).jsonp("Company profile updated successfully!");
+                            res.status(200).jsonp({msg:"Company profile updated successfully!"});
                         }
                     });
                 }
             });
         }
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
 
 let passAuth = [
-    check('password').exists(),
-    check('previous_password').exists()
+    check('newPassword').exists(),
+    check('oldPassword').exists()
 ];
 
 router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
+            res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
             const BCRYPT_SALT_ROUNDS = 12;
             let regData = {
-                hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
+                hash_pwd: bcrypt.hashSync(req.body.newPassword, BCRYPT_SALT_ROUNDS),
                 salt: BCRYPT_SALT_ROUNDS
             };
 
             db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else {
                     if (rows[0]) {
                         hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                        if (bcrypt.compareSync(req.body.previous_password, hashed_pwd)) {
+                        if (bcrypt.compareSync(req.body.oldPassword, hashed_pwd)) {
                             db.query("UPDATE company SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
                                 if (iErr) {
-                                    res.status(410).jsonp(iErr);
+                                    res.status(410).jsonp({msg:iErr});
                                     next(iErr);
                                 } else {
-                                    const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name }, config.secret);
-                                    res.status(200).jsonp({token: token });
+                                    res.status(200).jsonp({msg: "Password successfully updated!"});
                                 }
                             });
                         } else {
-                            res.status(410).jsonp("Wrong old password!");
+                            res.status(410).jsonp({msg:"Wrong old password!"});
                         }
                     } else {
-                        res.status(410).jsonp("Authentication failed!");
+                        res.status(410).jsonp({msg:"Authentication failed!"});
                     }
                 }
             });
         }
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 

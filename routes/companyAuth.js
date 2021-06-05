@@ -32,9 +32,9 @@ let regValidate = [
     check('password').exists(),
     check('description').exists(),
     check('phone').exists(),
-    check('company_type').exists().isNumeric(),
-    check('street_number').exists(),
-    check('street_name').exists(),
+    check('companyType').exists().isNumeric(),
+    check('streetNumber').exists(),
+    check('streetName').exists(),
     check('city').exists(),
     check('country').exists()
 ];
@@ -45,11 +45,11 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
         
         db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(409).jsonp("Your email address is already registered !");
+                    res.status(409).jsonp({msg:"Your email address is already registered !"});
                 } else {
                     const BCRYPT_SALT_ROUNDS = 12;
                     logGened = logGen(10);                    
@@ -66,28 +66,28 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                         background_picture: '',
                         logo_link: '',
                         paying_method: null,
-                        company_type: req.body.company_type,
+                        company_type: req.body.companyType,
                         verified: 0,
                         active: 0
                     };
                     db.query("INSERT INTO company SET ?", [regData], (iErr, result) => {
                         if (iErr) {
-                            res.status(410).jsonp(iErr);
+                            res.status(410).jsonp({msg:iErr});
                             next(iErr);
                         } else {
                             const usrData = {
                                 company: result.insertId,
                                 phone: req.body.phone,
                                 siret: req.body.siret,
-                                street_number: req.body.street_number,
-                                street_name: req.body.street_name,
+                                street_number: req.body.streetNumber,
+                                street_name: req.body.streetName,
                                 city: req.body.city,
                                 country: req.body.country,
                                 billing_adress: 1
                             };
                             db.query("INSERT INTO company_location SET ?", [usrData], (iaErr, logResult) => {
                                 if (iaErr) {
-                                    res.status(410).jsonp(iaErr);
+                                    res.status(410).jsonp({msg:iaErr});
                                     next(iaErr);
                                 } else {
                                     refToken = getRefreshToken(result.insertId, 'company');
@@ -100,10 +100,10 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                     
                                     dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            res.status(200).jsonp({id: result.insertId, login: logGened, access_token: token});
+                                            res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token}, msg:"Account successfully created!"});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({id: result.insertId, login: logGened, access_token: token, refresh_token: refToken});
+                                            res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token, refreshToken: refToken}, msg:"Account successfully created!"});
                                         }
                                     });
                                 }
@@ -115,7 +115,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
         });
     } catch (err) {
         console.log(err);
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
@@ -130,7 +130,7 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
 
         db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -139,10 +139,10 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
                         const token = getAccessToken(rows[0].id, 'company');
                         dbAuth.query("SELECT refresh_token FROM company_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp(err);
+                                res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
-                                if(rows2[0]) res.status(200).jsonp({id: rows[0].id, access_token: token, refresh_token: rows2[0].refresh_token});
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"Successfully logged in."});
                                 else{
                                     refToken = getRefreshToken(rows[0].id, 'company');
                                     let saveRefToken = {
@@ -151,48 +151,48 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
                                     }
                                     dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            res.status(410).jsonp(err);
+                                            res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({id: rows[0].id, access_token: token, refresh_token: refToken});
+                                            res.status(200).jsonp({data:{id: rows[0].id, accessToken: token, refreshToken: refToken}, msg:"Successfully logged in."});
                                         }
                                     });
                                 }
                             }
                         });
                     } else {
-                        res.status(410).jsonp("Authentication failed!");
+                        res.status(410).jsonp({msg:"Authentication failed!"});
                     }
                 } else {
-                    res.status(410).jsonp("Authentication failed!");
+                    res.status(410).jsonp({msg:"Authentication failed!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
 let refToken = [
-    check('refresh_token').exists()
+    check('refreshToken').exists()
 ];
 
 router.post('/v1/company/token/', refToken, (req, res, next) => {
     try{
-        dbAuth.query("SELECT id FROM company_refresh_token WHERE refresh_token = ?", [req.body.refresh_token], (err, rows, results) => {
+        dbAuth.query("SELECT id FROM company_refresh_token WHERE refresh_token = ?", [req.body.refreshToken], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:err});
                 next(err);
             } else {
                 if(rows[0]){
-                    res.status(200).jsonp({access_token: getAccessToken(rows[0].id, 'company')});
+                    res.status(200).jsonp({data:{accessToken: getAccessToken(rows[0].id, 'company')}, msg:"success"});
                 } else {
-                    res.status(403).jsonp("Refresh token is not valid.");
+                    res.status(403).jsonp({msg:"Refresh token is not valid."});
                 }
             }
         });
     } catch(err){
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 

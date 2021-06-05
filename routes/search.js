@@ -113,23 +113,23 @@ router.get('/v1/search/company/parameters', (req, res, next) => {
         }
 
         if(parameters.city == null && parameters.name == null && parameters.type == null){
-            res.status(400).jsonp("To make a research, please provide at least one parameter.");
+            res.status(400).jsonp({msg:"To make a research, please provide at least one parameter."});
         } else {
             db.query("SELECT company.id AS id, company.company_type AS company_type, company.name AS name, company.logo_link AS logo, company.description AS description, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city FROM company INNER JOIN company_location ON company_location.company = company.id WHERE (company_location.city = ? OR ? IS NULL) AND company.active = 1 AND company.verified = 1 AND (company.name LIKE ? OR ? IS NULL) AND (company.company_type = ? OR ? IS NULL) ORDER BY company.registration_date ASC LIMIT ?, ?", [parameters.city, parameters.city, parameters.name, parameters.name, parameters.type, parameters.type, parameters.page_p1, parameters.page_p2], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:err});
                     next(err);
                 } else {
                     if (rows[0]) {
-                        res.status(200).jsonp({res: rows});
+                        res.status(200).jsonp({data: rows, msg: "success"});
                     } else {
-                        res.status(404).jsonp("Company not found!");
+                        res.status(404).jsonp({msg:"Company not found!"});
                     }
                 }
             });
         }        
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
 
