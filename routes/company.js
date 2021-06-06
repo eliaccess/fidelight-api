@@ -47,7 +47,7 @@ router.get('/v1/company/type', midWare.checkToken, (req, res, next) => {
                 if (rows[0]) {
                     res.status(200).jsonp({data:rows, msg: "success"});
                 } else {
-                    res.status(410).jsonp({msg "No company type found!"});
+                    res.status(410).jsonp({msg:"No company type found!"});
                 }
             }
         });
