@@ -37,7 +37,7 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-router.get('/v1/company/type', midWare.checkToken, (req, res, next) => {
+router.get('/v1/company/type', (req, res, next) => {
     try {
         db.query("SELECT * FROM company_type", (err, rows, result) => {
             if (err) {

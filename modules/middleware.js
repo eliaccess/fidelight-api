@@ -12,15 +12,15 @@ let checkToken = (req, res, next) => {
     }
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
       if (err) {
-        if(err.name == 'TokenExpiredError') return res.status(401).jsonp('Your token expired.');
-        else return res.status(403).jsonp('Unauthorized access.');
+        if(err.name == 'TokenExpiredError') return res.status(401).jsonp({msg:'Your token expired.'});
+        else return res.status(403).jsonp({msg:'Unauthorized access.'});
       } else {
         req.decoded = decoded;
         next();
       }
     });
   } else {
-    return res.status(401).jsonp('Authentication missing');
+    return res.status(401).jsonp({msg:'Authentication missing'});
   }
 };
 
