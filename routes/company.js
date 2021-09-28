@@ -96,6 +96,33 @@ function checkScheduleFormat(data){
     else return true;
 }
 
+router.get('/v1/company/schedule/:companyId', midWare.checkToken, (req, res, next) => {
+    try {
+        db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.params.companyId], (err, rows, results) => {
+            if (err) {
+                res.status(410).jsonp({msg: err});
+                next(err);
+            } else if (rows[0]){
+                db.query("SELECT day, open_am AS openAm, close_am AS closeAm, open_pm AS openPm, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].id], (err, rows2, results) => {
+                    if(err){
+                        res.status(410).jsonp({msg: err});
+                        next(err);
+                    }
+                    else if(rows2[0]) {
+                        res.status(200).jsonp({data: rows2, msg: "No schedule registered for this company location!"})
+                    } else {
+                        res.status(404).jsonp({msg: "No schedule registered for this company location!"})
+                    }
+                });
+            } else {
+                res.status(404).jsonp({msg: "No company location registered for this company!"});
+            }
+        });
+    } catch (err) {
+        res.status(400).json(err);
+    }
+});
+
 // This route works as POST + PUT
 router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
     try {
@@ -593,7 +620,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         }
 
                         /* Adding the schedule of the company if it exists */
-                        db.query("SELECT day, open_am, close_am, open_pm, close_pm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
+                        db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -631,7 +658,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             country: rows[0].country,
                         }
                         /* Adding the schedule of the company if it exists */
-                        db.query("SELECT day, am, open, close FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
+                        db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);

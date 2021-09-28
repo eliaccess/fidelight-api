@@ -369,6 +369,42 @@ Puth the file in a form, with "backgroundPicture" as key.
 ```
 
 
+# Get the opening time (schedule) of one or multiple days of a company
+
+**URL** : `https://api.fidelight.fr/v1/company/schedule/$companyId`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+## Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "schedule":[
+    {
+      "day": 1,
+      "openAm": "08:00:00",
+      "closeAm": "12:00:00",
+      "openPm": "14:30:00",
+      "closePm": "20:00:00"
+    },
+    {
+      "day": 3,
+      "openAm": "09:00:00",
+      "closeAm": null,
+      "openPm": null,
+      "closePm": "18:00:00"
+    }
+  ]
+}
+```
+
+
 # Add or edit the opening time of one or multiple days of a company
 
 **URL** : `https://api.fidelight.fr/v1/company/schedule/`
