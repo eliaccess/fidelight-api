@@ -18,7 +18,7 @@ router.get('/v1/user/balance/:companyId', midWare.checkToken, (req, res, next) =
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(200).jsonp({data:{balance: rows[0].points}, msg:"success"});
+                    res.status(200).jsonp({data:{points: rows[0].points}, msg:"success"});
                 } else {
                     res.status(404).jsonp({msg:"Balance in this company not found!"});
                 }

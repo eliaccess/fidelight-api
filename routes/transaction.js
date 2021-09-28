@@ -26,11 +26,11 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
                                     next(err);
                                 } else {
                                     console.log(rows[0]);
-                                    res.status(200).jsonp({data:{transaction: rows[0].id, discount_id: rows[0].discount, discount_name: rows2[0].name, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                                    res.status(200).jsonp({data:{transactionId: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userNurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
                                 }
                             });
                         } else {
-                            res.status(200).jsonp({data:{transaction: rows[0].id, discount:null, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date},msg:"success"});
+                            res.status(200).jsonp({data:{transactionId: rows[0].id, discountId:null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date},msg:"success"});
                         }
                     } else {
                         res.status(404).jsonp({msg:"Transaction not found!"});
@@ -51,11 +51,11 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
                                     next(err);
                                 } else {
                                     console.log(rows[0]);
-                                    res.status(200).jsonp({data:{transaction: rows[0].id, discount_id: rows[0].discount, discount_name: rows2[0].name, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                                    res.status(200).jsonp({data:{transactionId: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
                                 }
                             });
                         } else {
-                            res.status(200).jsonp({data:{transaction: rows[0].id, discount: null, company_id: rows[0].companyId, company_name: rows[0].companyName, user_name: rows[0].userName, user_surname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                            res.status(200).jsonp({data:{transactionId: rows[0].id, discountId: null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
                         }
                     } else {
                         res.status(404).jsonp({msg:"Transaction not found!"});
@@ -71,8 +71,8 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
     }
 });
 
-
-router.get('/v1/transaction', midWare.checkToken, (req, res, next) => {
+/* TODO: ADD DISCOUNT NAME IN RETURNED, AND USER SURNAME */
+router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type == 'company') {
@@ -84,7 +84,7 @@ router.get('/v1/transaction', midWare.checkToken, (req, res, next) => {
                     if (rows[0]) {
                         let transact = [];
                         rows.forEach(rws => {
-                            transact.push({ transaction: rws.id, user: rws.surname, discount: rws.discount, value: rws.value, date: rws.date });
+                            transact.push({ transactionId: rws.id, userSurname: rws.surname, discountId: rws.discount, value: rws.value, date: rws.date });
                         });
                         res.status(200).jsonp({data:transact, msg:"success"});
                     } else {
@@ -101,7 +101,7 @@ router.get('/v1/transaction', midWare.checkToken, (req, res, next) => {
                     if (rows[0]) {
                         let transact = [];
                         rows.forEach(rws => {
-                            transact.push({ transaction: rws.id, company_id: rws.company_id, company_name: rws.company_name, discount: rws.discount, value: rws.value, date: rws.date });
+                            transact.push({ transactionId: rws.id, companyId: rws.company_id, companyName: rws.company_name, discountId: rws.discount, value: rws.value, date: rws.date });
                         });
                         res.status(200).jsonp({data:transact, msg:"success"});
                     } else {

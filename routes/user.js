@@ -151,6 +151,8 @@ let likeAuth = [
     midWare.checkToken
 ];
 
+
+/* TODO: ADD Company information */
 router.post('/v1/user/like/', likeAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
