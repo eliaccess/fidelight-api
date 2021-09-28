@@ -1,17 +1,3 @@
-# To know before using the API
-
-Please use HTTPS to communicate with the API.
-
-The domain name `api.fidelight.fr` is redirecting (status 302) on `fidelightapp-314712.ew.r.appspot.com`. If you have issues using the first one you can use the second.
-
-These functions are not supported yet :
-- Connect with facebook
-- Forgot password
-- Upload logos and background pictures (coming soon)
-
-Error codes are at the end of the file.
-
-
 # Search one or more companies
 
 **URL** : `https://api.fidelight.fr/v1/discount/hotdeals/$parameters?`
