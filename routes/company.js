@@ -375,7 +375,7 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
     }
 });
 
-router.post(('/v1/company/background/'), upload.single('backgroundPicture'), midWare.checkToken, (req, res, next) => {
+router.post(('/v1/company/background/'), multer.single('backgroundPicture'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
