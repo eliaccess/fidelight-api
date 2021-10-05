@@ -7,16 +7,13 @@ const bcrypt = require('bcryptjs');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 const fs = require('fs');
-const multer = require("multer");
-const storage = multer.diskStorage({
-    destination: function(req, file, cb){
-        cb(null, 'images/companies/');
-    },
-    filename: function(req, file, cb){
-        cb(null, 'company_' + new Date().toISOString() + '_' + file.originalname);
-    }
-});
 
+const {Storage} = require('@google-cloud/storage');
+
+// Instantiate a storage client
+const storage = new Storage();
+
+// Variables for image storage
 const fileFilter = (req, file, cb) => {
     if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png'){
         cb(null, true);
@@ -25,17 +22,25 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-const upload = multer({
-    storage: storage,
+const Multer = require("multer");
+const multer = Multer({
+    storage: Multer.memoryStorage(),
     limits: {
-      fileSize: 1024 * 1024 * 5
+      fileSize: 5 * 1024 * 1024, // no larger than 5mb, you can change as needed.
+    },
+    filename: function(req, file, cb){
+        cb(null, 'company_' + new Date().toISOString() + '_' + file.originalname);
     },
     onError : function(err, next) {
         console.log('error', err);
         next(err);
-    },
-    fileFilter: fileFilter
+    }
 });
+
+// A bucket is a container for objects (files).
+const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
+
+// ------ API ROUTES ------
 
 router.get('/v1/company/types', (req, res, next) => {
     try {
@@ -235,7 +240,7 @@ router.delete('/v1/company/schedule/:day', midWare.checkToken, (req, res, next) 
         }
 })
 
-router.post(('/v1/company/logo/'), upload.single('logo'), midWare.checkToken, (req, res, next) => {
+router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -256,14 +261,29 @@ router.post(('/v1/company/logo/'), upload.single('logo'), midWare.checkToken, (r
                                     res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    db.query("UPDATE company SET logo_link = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
-                                        if (err) {
-                                            res.status(410).jsonp({msg: err});
-                                            next(err);
-                                        } else {
-                                            res.status(200).jsonp({msg:"Logo added successfully!"});
-                                        }
+                                    // Create a new blob in the bucket and upload the file data.
+                                    const blob = bucket.file(req.file.originalname);
+                                    const blobStream = blob.createWriteStream();
+                                    // If error then we next
+                                    blobStream.on('error', err => {
+                                        next(err);
                                     });
+
+                                    blobStream.on('finish', () => {
+                                        // The public URL can be used to directly access the file via HTTP.
+                                        const publicUrl = format(
+                                          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                        );
+                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [publicUrl, req.decoded.id], (err, rows, results) => {
+                                            if (err) {
+                                                res.status(410).jsonp({msg: err});
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({msg:"Logo added successfully!", data: {logo: publicUrl}});
+                                            }
+                                        });
+                                    });
+                                    blobStream.end(req.file.buffer);
                                 }
                             });
                         } else {
@@ -272,7 +292,29 @@ router.post(('/v1/company/logo/'), upload.single('logo'), midWare.checkToken, (r
                                     res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    res.status(200).jsonp({msg:'Logo added successfully!'});
+                                    // Create a new blob in the bucket and upload the file data.
+                                    const blob = bucket.file(req.file.originalname);
+                                    const blobStream = blob.createWriteStream();
+                                    // If error then we next
+                                    blobStream.on('error', err => {
+                                        next(err);
+                                    });
+
+                                    blobStream.on('finish', () => {
+                                        // The public URL can be used to directly access the file via HTTP.
+                                        const publicUrl = format(
+                                          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                        );
+                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [publicUrl, req.decoded.id], (err, rows, results) => {
+                                            if (err) {
+                                                res.status(410).jsonp({msg: err});
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({msg:"Logo added successfully!", data: {logo: publicUrl}});
+                                            }
+                                        });
+                                    });
+                                    blobStream.end(req.file.buffer);
                                 }
                             });
                         }

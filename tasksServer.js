@@ -3,7 +3,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const app = express();
-const multer = require('multer');
+const Multer = require('multer');
+const {Storage} = require('@google-cloud/storage');
+
+// Instantiate a storage client
+const storage = new Storage();
+
+// Variable for OAuth
 const passport = require('passport');
 
 //const {enableProdMode} = require('@angular/core');
