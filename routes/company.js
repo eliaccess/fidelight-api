@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 const fs = require('fs');
+const path = require('path');
 
 const {Storage} = require('@google-cloud/storage');
 
@@ -265,7 +266,8 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
-                                    const blob = bucket.file(companyName + companyLogin + '_logo' + path.extname(req.file.originalname));
+                                    var pathVariable = "./company/logo/" + companyName + companyLogin + '_logo' + path.extname(req.file.originalname);
+                                    const blob = bucket.file(pathVariable);
                                     const blobStream = blob.createWriteStream();
                                     // If error then we next
                                     blobStream.on('error', err => {
@@ -296,7 +298,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
-                                    const blob = bucket.file("/company/logo/" + rows[0].name + rows[0].login + '_logo' +path.extname(req.file.originalname));
+                                    const blob = bucket.file("/company/logo/" + rows[0].name + rows[0].login + '_logo' + path.extname(req.file.originalname));
                                     const blobStream = blob.createWriteStream();
                                     // If error then we next
                                     blobStream.on('error', err => {
