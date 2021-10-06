@@ -263,7 +263,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
-                                    const blob = bucket.file(req.file.originalname);
+                                    const blob = bucket.file("test.jpeg");
                                     const blobStream = blob.createWriteStream();
                                     // If error then we next
                                     blobStream.on('error', err => {
