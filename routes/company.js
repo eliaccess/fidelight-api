@@ -258,7 +258,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                     } else if (rows[0]){
                         /* if a logo already exists, then we replace it, else we just create one */
                         if(rows[0].logo_link){
-                            var companyName = rows[0].name;
+                            var companyName = rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase();
                             var companyLogin = rows[0].login;
                             fs.unlink(rows[0].logo_link, function(err, rows){
                                 if(err && err.code !== "ENOENT"){
@@ -266,7 +266,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
-                                    var pathVariable = "./company/logo/" + companyName + companyLogin + '_logo' + path.extname(req.file.originalname);
+                                    var pathVariable = "company/logo/" + companyName + companyLogin + '_logo' + path.extname(req.file.originalname);
                                     const blob = bucket.file(pathVariable);
                                     const blobStream = blob.createWriteStream();
                                     // If error then we next
@@ -298,7 +298,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
-                                    const blob = bucket.file("/company/logo/" + rows[0].name + rows[0].login + '_logo' + path.extname(req.file.originalname));
+                                    const blob = bucket.file("company/logo/" + rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase() + rows[0].login + '_logo' + path.extname(req.file.originalname));
                                     const blobStream = blob.createWriteStream();
                                     // If error then we next
                                     blobStream.on('error', err => {
