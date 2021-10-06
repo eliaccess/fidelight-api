@@ -30,7 +30,7 @@ const multer = Multer({
       fileSize: 5 * 1024 * 1024, // no larger than 5mb, you can change as needed.
     },
     filename: function(req, file, cb){
-        cb(null, 'company_' + new Date().toISOString() + '_' + file.originalname);
+        cb(null, '/company/logo/' + new Date().toISOString() + file.originalname);
     },
     onError : function(err, next) {
         console.log('error', err);
