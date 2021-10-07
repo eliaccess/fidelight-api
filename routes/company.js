@@ -391,7 +391,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                         next(err);
                     } else if (rows[0]){
                         /* if a logo already exists, then we replace it, else we just create one */
-                        if(rows[0].logo_link){
+                        if(rows[0].background_picture){
                             var companyName = rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase();
                             var companyLogin = rows[0].login;
                             fs.unlink(rows[0].background_picture, function(err, rows){
@@ -479,7 +479,7 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
                     bucketName = "fidelight-api";
                     fileName = rows[0].background_picture;
                     /* if a logo already exists, then we replace it, else we just create one */
-                    if(rows[0].logo_link){
+                    if(rows[0].background_picture){
                         async function deleteFile() {
                             await storage.bucket(bucketName).file(fileName).delete();
                         
