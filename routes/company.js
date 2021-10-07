@@ -292,37 +292,30 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                 }
                             });
                         } else {
-                            db.query("UPDATE company SET logo_link = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
-                                if (err) {
-                                    res.status(410).jsonp({msg:err});
+                                // Create a new blob in the bucket and upload the file data.
+                                const blob = bucket.file("company/logo/" + rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase() + rows[0].login + '_logo' + path.extname(req.file.originalname));
+                                const blobStream = blob.createWriteStream();
+                                // If error then we next
+                                blobStream.on('error', err => {
                                     next(err);
-                                } else {
-                                    // Create a new blob in the bucket and upload the file data.
-                                    const blob = bucket.file("company/logo/" + rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase() + rows[0].login + '_logo' + path.extname(req.file.originalname));
-                                    const blobStream = blob.createWriteStream();
-                                    // If error then we next
-                                    blobStream.on('error', err => {
-                                        next(err);
-                                    });
+                                });
 
-                                    blobStream.on('finish', () => {
-                                        // The public URL can be used to directly access the file via HTTP.
-                                        const publicUrl = format(
-                                          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
-                                        );
-                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
-                                            if (err) {
-                                                res.status(410).jsonp({msg: err});
-                                                next(err);
-                                            } else {
-                                                res.status(200).jsonp({msg:"Logo added successfully!", data: {logo: publicUrl}});
-                                            }
-                                        });
+                                blobStream.on('finish', () => {
+                                    // The public URL can be used to directly access the file via HTTP.
+                                    const publicUrl = format(
+                                        `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                    );
+                                    db.query("UPDATE company SET logo_link = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
+                                        if (err) {
+                                            res.status(410).jsonp({msg: err});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({msg:"Logo added successfully!", data: {logo: publicUrl}});
+                                        }
                                     });
-                                    blobStream.end(req.file.buffer);
-                                }
-                            });
-                        }
+                                });
+                                blobStream.end(req.file.buffer);
+                            }
                     } else {
                         res.status(410).jsonp({msg:'Company does not exist!'});
                     }
