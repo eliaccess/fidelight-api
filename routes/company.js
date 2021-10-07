@@ -476,21 +476,24 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
                     res.status(410).jsonp({msg:err});
                     next(err);
                 } else if (rows[0]){
-                    /* if a background picture already exists, then we replace it, else we just create one */
-                    if(rows[0].background_picture){
-                        fs.unlink(rows[0].background_picture, function(err, rows){
-                            if(err && err.code !== "ENOENT"){
+                    bucketName = "fidelight-api";
+                    fileName = rows[0].background_picture;
+                    /* if a logo already exists, then we replace it, else we just create one */
+                    if(rows[0].logo_link){
+                        async function deleteFile() {
+                            await storage.bucket(bucketName).file(fileName).delete();
+                        
+                            console.log(`gs://${bucketName}/${fileName} deleted`);
+                        }
+
+                        deleteFile().catch(console.error);
+
+                        db.query("UPDATE company SET background_picture = null WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                            if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
-                                db.query("UPDATE company SET background_picture = '' WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-                                    if (err) {
-                                        res.status(410).jsonp({msg:err});
-                                        next(err);
-                                    } else {
-                                        res.status(200).jsonp({msg:'Background picture deleted successfully!'});
-                                    }
-                                });
+                                res.status(200).jsonp({msg:'Background picture deleted successfully!'});
                             }
                         });
                     } else {
