@@ -390,33 +390,66 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                         res.status(410).jsonp({msg:err});
                         next(err);
                     } else if (rows[0]){
-                        /* if a background picture already exists, then we replace it, else we just create one */
-                        if(rows[0].background_picture){
+                        /* if a logo already exists, then we replace it, else we just create one */
+                        if(rows[0].logo_link){
+                            var companyName = rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase();
+                            var companyLogin = rows[0].login;
                             fs.unlink(rows[0].background_picture, function(err, rows){
                                 if(err && err.code !== "ENOENT"){
                                     res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    db.query("UPDATE company SET background_picture = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
-                                        if (err) {
-                                            res.status(410).jsonp({msg:err});
-                                            next(err);
-                                        } else {
-                                            res.status(200).jsonp({msg:"Background picture added successfully!"});
-                                        }
+                                    // Create a new blob in the bucket and upload the file data.
+                                    var pathVariable = "company/background_picture/" + companyName + companyLogin + '_background_picture' + path.extname(req.file.originalname);
+                                    const blob = bucket.file(pathVariable);
+                                    const blobStream = blob.createWriteStream();
+                                    // If error then we next
+                                    blobStream.on('error', err => {
+                                        next(err);
                                     });
+
+                                    blobStream.on('finish', () => {
+                                        // The public URL can be used to directly access the file via HTTP.
+                                        const publicUrl = format(
+                                          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                        );
+                                        db.query("UPDATE company SET background_picture = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
+                                            if (err) {
+                                                res.status(410).jsonp({msg: err});
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({msg:"Background picture added successfully!", data: {logo: publicUrl}});
+                                            }
+                                        });
+                                    });
+                                    blobStream.end(req.file.buffer);
                                 }
                             });
                         } else {
-                            db.query("UPDATE company SET background_picture = ? WHERE id = ?", [req.file.path, req.decoded.id], (err, rows, results) => {
-                                if (err) {
-                                    res.status(410).jsonp({msg:err});
+                                // Create a new blob in the bucket and upload the file data.
+                                const blob = bucket.file("company/background_picture/" + rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase() + rows[0].login + '_background_picture' + path.extname(req.file.originalname));
+                                const blobStream = blob.createWriteStream();
+                                // If error then we next
+                                blobStream.on('error', err => {
                                     next(err);
-                                } else {
-                                    res.status(200).jsonp({msg:"Background picture added successfully!"});
-                                }
-                            });
-                        }
+                                });
+
+                                blobStream.on('finish', () => {
+                                    // The public URL can be used to directly access the file via HTTP.
+                                    const publicUrl = format(
+                                        `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                    );
+                                    db.query("UPDATE company SET background_picture = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
+                                        if (err) {
+                                            res.status(410).jsonp({msg: err});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({msg:"Background picture added successfully!", data: {logo: publicUrl}});
+                                        }
+                                    });
+                                });
+                                blobStream.end(req.file.buffer);
+                            }
                     } else {
                         res.status(410).jsonp({msg:'Company does not exist!'});
                     }
@@ -427,7 +460,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
         }
     } catch (err) {
         console.log(err);
-        res.status(400).json({msg:err});
+        res.status(400).json(err);
     }
 });
 
