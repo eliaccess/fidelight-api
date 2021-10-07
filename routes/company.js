@@ -686,17 +686,30 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                     if (rows[0]) {
                         // The public URL can be used to directly access the file via HTTP.
                         const bucketName = "fidelight-api";
-                        const publicUrl = format(
-                            `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
-                        );
+                        if(rows[0].logo == null){
+                            const publicUrlLogo = null
+                        } else {
+                            const publicUrlLogo = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
+                            );
+                        }
+
+                        if(rows[0].background_picture == null){
+                            const publicUrlBackgroundPicture = null
+                        } else {
+                            const publicUrlBackgroundPicture = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].background_picture}`
+                            );
+                        }
+                        
                         let companyInfo = {
                             name: rows[0].name,
                             phone: rows[0].phone,
                             email: rows[0].email,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            logo: publicUrl,
-                            background_picture: rows[0].background_picture,
+                            logo: publicUrlLogo,
+                            background_picture: publicUrlBackgroundPicture,
                             street_number: rows[0].street_number,
                             street_name: rows[0].street_name,
                             city: rows[0].city,
