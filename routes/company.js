@@ -418,7 +418,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                                                 res.status(410).jsonp({msg: err});
                                                 next(err);
                                             } else {
-                                                res.status(200).jsonp({msg:"Background picture added successfully!", data: {logo: publicUrl}});
+                                                res.status(200).jsonp({msg:"Background picture added successfully!", data: {backgroundPicture: publicUrl}});
                                             }
                                         });
                                     });
@@ -444,7 +444,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                                             res.status(410).jsonp({msg: err});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({msg:"Background picture added successfully!", data: {logo: publicUrl}});
+                                            res.status(200).jsonp({msg:"Background picture added successfully!", data: {backgroundPicture: publicUrl}});
                                         }
                                     });
                                 });

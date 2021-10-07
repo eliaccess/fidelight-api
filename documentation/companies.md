@@ -214,7 +214,7 @@
 
 ## Request Format
 
-Puth the file in a form, with "logo" as key.
+Put the file in a form, with "logo" as key.
 
 ## Success Response
 
@@ -224,7 +224,10 @@ Puth the file in a form, with "logo" as key.
 
 ```json
 {
-  "msg": "Logo successfully added!"
+  "msg": "Logo successfully added!",
+  "data":{
+    "logo": "https://storage.googleapis.com/fidelight-api/company/logo/tacos315AZD_logo.jpeg"
+  }
 }
 ```
 
@@ -270,7 +273,10 @@ Puth the file in a form, with "backgroundPicture" as key.
 
 ```json
 {
-  "msg": "Background picture successfully added!"
+  "msg": "Background picture successfully added!",
+  "data":{
+    "logo": "https://storage.googleapis.com/fidelight-api/company/background_picture/tacos315AZD_background_picture.jpeg"
+  }
 }
 ```
 

@@ -7,7 +7,6 @@ The domain name `api.fidelight.fr` is redirecting (status 302) on `fidelightapp-
 These functions are not supported yet :
 - Connect with facebook
 - Forgot password
-- Upload logos and background pictures (coming soon)
 
 Error codes are at the end of the file.
 
