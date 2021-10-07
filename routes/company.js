@@ -279,7 +279,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                         const publicUrl = format(
                                           `https://storage.googleapis.com/${bucket.name}/${blob.name}`
                                         );
-                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [publicUrl, req.decoded.id], (err, rows, results) => {
+                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
                                             if (err) {
                                                 res.status(410).jsonp({msg: err});
                                                 next(err);
@@ -310,7 +310,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                         const publicUrl = format(
                                           `https://storage.googleapis.com/${bucket.name}/${blob.name}`
                                         );
-                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [publicUrl, req.decoded.id], (err, rows, results) => {
+                                        db.query("UPDATE company SET logo_link = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
                                             if (err) {
                                                 res.status(410).jsonp({msg: err});
                                                 next(err);
@@ -349,21 +349,24 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
                     res.status(410).jsonp({msg:err});
                     next(err);
                 } else if (rows[0]){
+                    bucketName = "fidelight-api";
+                    fileName = rows[0].logo_link;
                     /* if a logo already exists, then we replace it, else we just create one */
                     if(rows[0].logo_link){
-                        fs.unlink(rows[0].logo_link, function(err, rows){
-                            if(err && err.code !== "ENOENT"){
+                        async function deleteFile() {
+                            await storage.bucket(bucketName).file(fileName).delete();
+                        
+                            console.log(`gs://${bucketName}/${fileName} deleted`);
+                        }
+
+                        deleteFile().catch(console.error);
+
+                        db.query("UPDATE company SET logo_link = null WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                            if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
-                                db.query("UPDATE company SET logo_link = '' WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-                                    if (err) {
-                                        res.status(410).jsonp({msg:err});
-                                        next(err);
-                                    } else {
-                                        res.status(200).jsonp({msg:'Logo deleted successfully!'});
-                                    }
-                                });
+                                res.status(200).jsonp({msg:'Logo deleted successfully!'});
                             }
                         });
                     } else {
