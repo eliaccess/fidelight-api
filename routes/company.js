@@ -686,18 +686,21 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                     if (rows[0]) {
                         // The public URL can be used to directly access the file via HTTP.
                         const bucketName = "fidelight-api";
+                        var publicUrlLogo = null;
+                        var publicUrlBackgroundPicture = null;
+
                         if(rows[0].logo == null){
-                            const publicUrlLogo = null
+                            publicUrlLogo = null
                         } else {
-                            const publicUrlLogo = format(
+                            publicUrlLogo = format(
                                 `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
                             );
                         }
 
                         if(rows[0].background_picture == null){
-                            const publicUrlBackgroundPicture = null
+                            publicUrlBackgroundPicture = null
                         } else {
-                            const publicUrlBackgroundPicture = format(
+                            publicUrlBackgroundPicture = format(
                                 `https://storage.googleapis.com/${bucketName}/${rows[0].background_picture}`
                             );
                         }
