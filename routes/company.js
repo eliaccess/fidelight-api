@@ -648,13 +648,18 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                     next(err);
                 } else {
                     if (rows[0]) {
+                        // The public URL can be used to directly access the file via HTTP.
+                        const bucketName = "fidelight-api";
+                        const publicUrl = format(
+                            `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
+                        );
                         let companyInfo = {
                             name: rows[0].name,
                             phone: rows[0].phone,
                             email: rows[0].email,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            logo: rows[0].logo,
+                            logo: publicUrl,
                             background_picture: rows[0].background_picture,
                             street_number: rows[0].street_number,
                             street_name: rows[0].street_name,
@@ -688,12 +693,17 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                     next(err);
                 } else {
                     if (rows[0]) {
+                        // The public URL can be used to directly access the file via HTTP.
+                        const bucketName = "fidelight-api";
+                        const publicUrl = format(
+                            `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
+                        );
                         let companyInfo = {
                             name: rows[0].name,
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            logo: rows[0].logo,
+                            logo: publicUrl,
                             background_picture: rows[0].background_picture,
                             street_number: rows[0].street_number,
                             street_name: rows[0].street_name,
