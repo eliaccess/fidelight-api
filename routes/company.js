@@ -61,8 +61,8 @@ router.get('/v1/company/types', (req, res, next) => {
                         if(type.logo_link == null){
                             publicUrlLogo = null
                         } else {
-                            rows[counter] = format(
-                                `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
+                            rows[counter].logo_link = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].logo_link}`
                             );
                         }
                         counter++;
