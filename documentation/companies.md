@@ -15,18 +15,18 @@
 ```json
 {
   "data":{
-    "types": [
-      {
+      "0":{
         "id": 1,
         "title": "Bakery",
-        "description": "A place that sells some nice bread."
+        "description": "A place that sells some nice bread.",
+        "logoLink": "https://storage.fidelight.com/bakery.png"
       },
-      {
+      "1":{
         "id": 2,
         "title": "Restaurant",
-        "description": "A shop where food is cooked and sold to feast."
+        "description": "A shop where food is cooked and sold to feast.",
+        "logoLink": "https://storage.fidelight.com/bakery.png"
       }
-    ]
   },
   "msg": "success"
 }
