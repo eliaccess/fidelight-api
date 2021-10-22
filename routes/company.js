@@ -46,23 +46,20 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
 
 router.get('/v1/company/types', (req, res, next) => {
     try {
-        db.query("SELECT * FROM company_type", (err, rows, result) => {
+        db.query("SELECT id, name, description, logo_link AS logoLink FROM company_type", (err, rows, result) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
             } else {
                 if (rows[0]) {
                     const bucketName = "fidelight-api";
-                    var publicUrlLogo = null;
-                    var publicUrlBackgroundPicture = null;
 
                     var counter = 0;
                     rows.forEach(type => {
-                        if(type.logo_link == null){
-                            publicUrlLogo = null
+                        if(type.logoLink == null){
                         } else {
-                            rows[counter].logo_link = format(
-                                `https://storage.googleapis.com/${bucketName}/${type.logo_link}`
+                            rows[counter].logoLink = format(
+                                `https://storage.googleapis.com/${bucketName}/${type.logoLink}`
                             );
                         }
                         counter++;
