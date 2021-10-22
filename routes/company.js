@@ -52,6 +52,22 @@ router.get('/v1/company/types', (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
+                    const bucketName = "fidelight-api";
+                    var publicUrlLogo = null;
+                    var publicUrlBackgroundPicture = null;
+
+                    var counter = 0;
+                    rows.forEach(type => {
+                        if(type.logo_link == null){
+                            publicUrlLogo = null
+                        } else {
+                            rows[counter] = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
+                            );
+                        }
+                        counter++;
+                    });
+                    
                     res.status(200).jsonp({data:rows, msg: "success"});
                 } else {
                     res.status(410).jsonp({msg:"No company type found!"});
