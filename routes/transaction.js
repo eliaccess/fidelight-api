@@ -85,7 +85,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                         rows.forEach(rws => {
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
-                                if (if (rws.discountName != null)) {
+                                if (rws.discountName != null) {
                                     transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, userSurname: rws.surname, value: rws.value, date: rws.date});
                                 } else {
                                     transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", userSurname: rws.surname, value: rws.value, date: rws.date});
