@@ -18,13 +18,13 @@
 {
   "data":{
     "transaction": 256,
-    "discount_id": 30,
-    "discount_name": "50 cts off on the croissants",
-    "company_id": 56,
-    "company_name": "The Coffee",
-    "user_id": 31,
-    "user_surname": "Peter",
-    "user_name": "Jackson",
+    "discountId": 30,
+    "discountName": "50 cts off on the croissants",
+    "companyId": 56,
+    "companyName": "The Coffee",
+    "userId": 31,
+    "userSurname": "Peter",
+    "userName": "Jackson",
     "value": 800,
     "date": "2021-01-02T09:34:12.648Z"
   },
