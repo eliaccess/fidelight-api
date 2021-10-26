@@ -1,4 +1,5 @@
 const express = require('express');
+const {format} = require('util');
 //const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
@@ -257,12 +258,27 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
-        db.query("SELECT company.id AS company FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
+        db.query("SELECT company.id AS id, company.name AS name, company.description AS description, company.logo_link AS logoLink FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
-            } else {
+            } else if (rows[0]){
+                const bucketName = "fidelight-api";
+                var counter = 0;
+                rows.forEach(company => {
+                    if(company.logoLink == null){
+                        rows[counter].logoLink = null;
+                    } else {
+                        rows[counter].logoLink = format(
+                            `https://storage.googleapis.com/${bucketName}/${company.logoLink}`
+                        );
+                    }
+                    counter++;
+                });
+
                 res.status(200).jsonp({data:rows, msg:"success"});
+            } else {
+                res.status(200).jsonp({msg:"No company liked yet!"});
             }
         });
     } catch (err) {

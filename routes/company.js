@@ -57,6 +57,7 @@ router.get('/v1/company/types', (req, res, next) => {
                     var counter = 0;
                     rows.forEach(type => {
                         if(type.logoLink == null){
+                            rows[counter].logoLink = null;
                         } else {
                             rows[counter].logoLink = format(
                                 `https://storage.googleapis.com/${bucketName}/${type.logoLink}`
