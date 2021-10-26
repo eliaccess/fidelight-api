@@ -129,7 +129,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
 
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
-                               db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
+                               await db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
