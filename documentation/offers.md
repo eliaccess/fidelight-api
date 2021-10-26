@@ -168,7 +168,7 @@
 ```json
 {
   "data":{
-    "discounts": [
+    "rewards": [
       {
         "id": 5896,
         "discountType": 3,
@@ -183,6 +183,23 @@
         "cost": 50,
         "name": "-50% on the tea",
         "value": 25
+      }
+    ],
+    "offers": [
+      {
+        "id": 5896,
+        "discountType": 3,
+        "cost": 0,
+        "name": "40% off on the kebab sandwich",
+        "perDay": ["monday", "tuesday", "thursday"],
+        "value": 2.5
+      },
+      {
+        "id": 8955,
+        "discountType": 2,
+        "cost": 0,
+        "name": "-10% on the tea",
+        "value": 5
       }
     ]
   },
