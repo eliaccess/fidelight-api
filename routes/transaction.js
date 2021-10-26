@@ -1,4 +1,5 @@
 const express = require('express');
+const {format} = require('util');
 const router = express.Router();
 const db = require('../modules/dbConnect');
 const midWare = require('../modules/middleware');
@@ -25,12 +26,11 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
                                     res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    console.log(rows[0]);
-                                    res.status(200).jsonp({data:{transactionId: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userNurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                                    res.status(200).jsonp({data:{ id: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userNurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
                                 }
                             });
                         } else {
-                            res.status(200).jsonp({data:{transactionId: rows[0].id, discountId:null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date},msg:"success"});
+                            res.status(200).jsonp({data:{ id: rows[0].id, discountId:null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date},msg:"success"});
                         }
                     } else {
                         res.status(404).jsonp({msg:"Transaction not found!"});
@@ -50,12 +50,11 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
                                     res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    console.log(rows[0]);
-                                    res.status(200).jsonp({data:{transactionId: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                                    res.status(200).jsonp({data:{ id: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
                                 }
                             });
                         } else {
-                            res.status(200).jsonp({data:{transactionId: rows[0].id, discountId: null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                            res.status(200).jsonp({data:{ id: rows[0].id, discountId: null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
                         }
                     } else {
                         res.status(404).jsonp({msg:"Transaction not found!"});
@@ -84,8 +83,21 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                     if (rows[0]) {
                         let transact = [];
                         rows.forEach(rws => {
-                            transact.push({ transactionId: rws.id, userSurname: rws.surname, discountId: rws.discount, value: rws.value, date: rws.date });
+                            /* Separating rewards and offers usage */
+                            if(rows[0].discount != null){
+                               db.query("SELECT name FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
+                                    if (err) {
+                                        res.status(410).jsonp({msg:err});
+                                        next(err);
+                                    } else {
+                                        transact.push({data:{ id: rws.id, discountId: rws.discount, discountName: rows2[0].name, userSurname: rws.surname, value: rws.value, date: rws.date }, msg:"success"});
+                                    }
+                                });
+                            } else {
+                                transact.push({ id: rws.id, userSurname: rws.surname, discountId: null, value: rws.value, date: rws.date });
+                            }
                         });
+
                         res.status(200).jsonp({data:transact, msg:"success"});
                     } else {
                         res.status(404).jsonp({msg:"No Transaction Found!"});
@@ -93,7 +105,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                 }
             });
         } else if(req.decoded.type == 'user') {
-            db.query("SELECT transaction.id AS id, company.id as company_id, company.name as company_name, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN company ON transaction.company = company.id WHERE transaction.user = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id],(err, rows, result) => {
+            db.query("SELECT transaction.id AS id, company.id as company_id, company.name as company_name, company.logo_link AS companyLogoLink, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN company ON transaction.company = company.id WHERE transaction.user = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id],(err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -101,7 +113,32 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                     if (rows[0]) {
                         let transact = [];
                         rows.forEach(rws => {
-                            transact.push({ transactionId: rws.id, companyId: rws.company_id, companyName: rws.company_name, discountId: rws.discount, value: rws.value, date: rws.date });
+                            /* Generating logo links for companies */
+                            const bucketName = "fidelight-api";
+                            var counter = 0;
+                            rows.forEach(transaction => {
+                                if(transaction.companyLogoLink == null){
+                                    rows[counter].logoLink = null;
+                                } else {
+                                    rows[counter].companyLogoLink = format(
+                                        `https://storage.googleapis.com/${bucketName}/${transaction.companyLogoLink}`
+                                    );
+                                }
+                                counter++;
+                            });
+                            /* Separating rewards and offers usage */
+                            if(rows[0].discount != null){
+                               db.query("SELECT name FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
+                                    if (err) {
+                                        res.status(410).jsonp({msg:err});
+                                        next(err);
+                                    } else {
+                                        transact.push({data:{id: rws.id, discountId: rws.discount, discountName: rows2[0].name, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date }, msg:"success"});
+                                    }
+                                });
+                            } else {
+                                transact.push({ id: rws.id, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, discountId: null, value: rws.value, date: rws.date });
+                            }
                         });
                         res.status(200).jsonp({data:transact, msg:"success"});
                     } else {
