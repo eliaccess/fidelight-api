@@ -337,10 +337,16 @@ To define
   "data":{
     "companies":[
       {
-        "company": 10
+        "id": 10,
+        "name": "The Kebabos",
+        "description":"The best Kebab of the year",
+        "logoLink" : "https://storage.google.com/company/logo/the_kebabos_a66azsds6.png"
       },
       {
-        "company": 117
+        "id": 85,
+        "name": "Tea Time",
+        "description":"Since 1981",
+        "logoLink" : "https://storage.google.com/company/logo/tea_time_f65sqa.png"
       }
     ]
   },
