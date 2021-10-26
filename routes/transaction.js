@@ -107,7 +107,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                 }
             });
         } else if(req.decoded.type == 'user') {
-            db.query("SELECT transaction.id AS id, company.id as company_id, company.name as company_name, company.logo_link AS companyLogoLink, transaction.discount as discount, transaction.value as value, transaction.date as date, discount.name AS discountName FROM transaction INNER JOIN company ON transaction.company = company.id LEFT JOIN discount ON company.discount = discount.id WHERE transaction.user = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id],(err, rows, result) => {
+            db.query("SELECT transaction.id AS id, company.id as company_id, company.name as company_name, company.logo_link AS companyLogoLink, transaction.discount as discount, transaction.value as value, transaction.date as date, discount.name AS discountName FROM transaction INNER JOIN company ON transaction.company = company.id LEFT JOIN discount ON transaction.discount = discount.id WHERE transaction.user = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id],(err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
