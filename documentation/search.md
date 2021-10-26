@@ -25,24 +25,24 @@ page | If there are more than 10 results, this parameter is used to get the firs
 {
   "data": [
     {
-      "id": 56,
+      "companyId": 56,
       "name": "Kebab Flowerish",
       "description": "Best kebab of Paris since 1958",
-      "companyType": 3,
+      "companyTypeId": 3,
       "city": "Paris",
       "streetName": "Rue du Poulet",
       "streetNumber": 22,
-      "logo": "/company/kebab_flowerish_16515.jpg"
+      "logo": "https://storage.google.com/company/kebab_flowerish_16515.jpg"
     },
     {
-      "id": 1523,
+      "companyId": 1523,
       "name": "Coffee Shop Petunia",
       "description": "Perfect Coffee is your coffee shop since 1989 ...",
-      "companyType": 5,
+      "companyTypeId": 5,
       "city": "Paris",
       "streetName": "Rue du Paprika",
       "streetNumber": 357,
-      "logo": "/company/cofee_shop_petunia_16515.jpg"
+      "logo": "https://storage.google.com/company/cofee_shop_petunia_16515.jpg"
     }
   ],
   "msg": "success"
