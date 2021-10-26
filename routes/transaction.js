@@ -90,11 +90,11 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
-                                        transact.push({data:{ id: rws.id, discountId: rws.discount, discountName: rows2[0].name, userSurname: rws.surname, value: rws.value, date: rws.date }, msg:"success"});
+                                        transact.push({id: rws.id, discountId: rws.discount, discountName: rows2[0].name, userSurname: rws.surname, value: rws.value, date: rws.date});
                                     }
                                 });
                             } else {
-                                transact.push({ id: rws.id, userSurname: rws.surname, discountId: null, value: rws.value, date: rws.date });
+                                transact.push({id: rws.id, userSurname: rws.surname, discountId: null, value: rws.value, date: rws.date});
                             }
                         });
 
@@ -111,21 +111,20 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                     next(err);
                 } else {
                     if (rows[0]) {
+                        const bucketName = "fidelight-api";
                         var transact = [];
+                        var counter = 0;
                         rows.forEach(rws => {
                             /* Generating logo links for companies */
-                            const bucketName = "fidelight-api";
-                            var counter = 0;
-                            rows.forEach(transaction => {
-                                if(transaction.companyLogoLink == null){
-                                    rows[counter].logoLink = null;
-                                } else {
-                                    rows[counter].companyLogoLink = format(
-                                        `https://storage.googleapis.com/${bucketName}/${transaction.companyLogoLink}`
-                                    );
-                                }
-                                counter++;
-                            });
+                            if(rws.companyLogoLink == null){
+                                rows[counter].companyLogoLink = null;
+                            } else {
+                                rows[counter].companyLogoLink = format(
+                                    `https://storage.googleapis.com/${bucketName}/${rws.companyLogoLink}`
+                                );
+                            }
+                            counter++;
+
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
                                db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
@@ -133,11 +132,11 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
-                                        transact.push({data:{id: rws.id, discountId: rws.discount, discountName: rows2[0].name, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date }, msg:"success"});
+                                        transact.push({id: rws.id, discountId: rws.discount, discountName: rows2[0].name, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
                                     }
                                 });
                             } else {
-                                transact.push({ id: rws.id, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, discountId: null, value: rws.value, date: rws.date });
+                                transact.push({id: rws.id, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, discountId: null, value: rws.value, date: rws.date});
                             }
                         });
                         res.status(200).jsonp({data:transact, msg:"success"});
