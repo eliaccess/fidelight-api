@@ -107,7 +107,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                 }
             });
         } else if(req.decoded.type == 'user') {
-            db.query("SELECT transaction.id AS id, company.id as company_id, company.name as company_name, company.logo_link AS companyLogoLink, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN company ON transaction.company = company.id WHERE transaction.user = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id],(err, rows, result) => {
+            db.query("SELECT transaction.id AS id, company.id as company_id, company.name as company_name, company.logo_link AS companyLogoLink, transaction.discount as discount, transaction.value as value, transaction.date as date, discount.name AS discountName FROM transaction INNER JOIN company ON transaction.company = company.id LEFT JOIN discount ON company.discount = discount.id WHERE transaction.user = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id],(err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -129,16 +129,11 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
 
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
-                               await db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
-                                    if (err) {
-                                        res.status(410).jsonp({msg:err});
-                                        next(err);
-                                    } else if (rows2[0] != null) {
-                                        transact.push({id: rws.id, discountId: rws.discount, discountName: rows2[0].name, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
-                                    } else {
-                                        transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
-                                    }
-                                });
+                                if (rws.discountName != null) {
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
+                                } else {
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
+                                }
                             } else {
                                 transact.push({id: rws.id, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, discountId: null, value: rws.value, date: rws.date});
                             }
