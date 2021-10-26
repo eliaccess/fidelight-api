@@ -89,8 +89,10 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
-                                    } else {
+                                    } else if (rows2[0] != null) {
                                         transact.push({id: rws.id, discountId: rws.discount, discountName: rows2[0].name, userSurname: rws.surname, value: rws.value, date: rws.date});
+                                    } else {
+                                        transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", userSurname: rws.surname, value: rws.value, date: rws.date});
                                     }
                                 });
                             } else {
