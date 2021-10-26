@@ -244,7 +244,16 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                 next(err);
             } else {
                 if (rows[0]){
-                    res.status(200).jsonp({data:{discounts: rows}, msg: "success"});
+                    var offers=[];
+                    var rewards=[];
+                    rows.forEach(company => {
+                        if(company.cost == 0 || company.cost == null){
+                            offers.push(company)
+                        } else {
+                            rewards.push(company)
+                        }
+                    });
+                    res.status(200).jsonp({data:{rewards: rewards, offers: offers}, msg: "success"});
                 } else {
                     res.status(404).jsonp({msg:"No discount available for that company."});
                 }
