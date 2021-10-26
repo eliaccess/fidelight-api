@@ -75,7 +75,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type == 'company') {
-            db.query("SELECT transaction.id AS id, user.surname AS surname, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN user ON user.id = transaction.user WHERE transaction.company = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id], (err, rows, result) => {
+            db.query("SELECT transaction.id AS id, user.surname AS surname, transaction.discount as discount, transaction.value as value, transaction.date as date FROM transaction INNER JOIN user ON user.id = transaction.user LEFT JOIN discount ON transaction.discount = discount.id WHERE transaction.company = ? ORDER BY transaction.date DESC LIMIT 20", [req.decoded.id], (err, rows, result) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -85,21 +85,15 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                         rows.forEach(rws => {
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
-                               db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
-                                    if (err) {
-                                        res.status(410).jsonp({msg:err});
-                                        next(err);
-                                    } else if (rows2[0] != null) {
-                                        transact.push({id: rws.id, discountId: rws.discount, discountName: rows2[0].name, userSurname: rws.surname, value: rws.value, date: rws.date});
-                                    } else {
-                                        transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", userSurname: rws.surname, value: rws.value, date: rws.date});
-                                    }
-                                });
+                                if (if (rws.discountName != null)) {
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, userSurname: rws.surname, value: rws.value, date: rws.date});
+                                } else {
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", userSurname: rws.surname, value: rws.value, date: rws.date});
+                                }
                             } else {
                                 transact.push({id: rws.id, userSurname: rws.surname, discountId: null, value: rws.value, date: rws.date});
                             }
                         });
-
                         res.status(200).jsonp({data:transact, msg:"success"});
                     } else {
                         res.status(404).jsonp({msg:"No Transaction Found!"});
