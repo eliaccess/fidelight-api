@@ -329,8 +329,24 @@ Puth the file in a form, with "backgroundPicture" as key.
     "city": "Paris",
     "streetName": "Rue du Paprika",
     "streetNumber": 357,
-    "logo": "/company/cofee_shop_petunia_16515.jpg",
-    "backgroundPicture": "/company/cofee_shop_petunia_16514.jpg"
+    "logo": "https://storage.google.com/company/cofee_shop_petunia_16515.jpg",
+    "backgroundPicture": "https://storage.google.com/company/cofee_shop_petunia_16514.jpg",
+    "schedule":[
+      {
+        "day": 1,
+        "openAm": "08:00:00",
+        "closeAm": "12:00:00",
+        "openPm": "14:30:00",
+        "closePm": "20:00:00"
+      },
+      {
+        "day": 3,
+        "openAm": "09:00:00",
+        "closeAm": null,
+        "openPm": null,
+        "closePm": "18:00:00"
+      }
+    ]
   },
   "msg": "success"
 }

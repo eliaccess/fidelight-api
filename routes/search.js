@@ -95,7 +95,7 @@ router.get('/api/search/discount/c/h/:city', (req, res, next) => {
 
 /* Company Search */
 /* Get all companies from a city */
-router.get('/v1/search/company/parameters', (req, res, next) => {
+router.get('/v1/search/company/parameters', midWare.checkToken, (req, res, next) => {
     try {
         /* supported parameters :
          * - name : name / part of the name of the company
@@ -115,12 +115,23 @@ router.get('/v1/search/company/parameters', (req, res, next) => {
         if(parameters.city == null && parameters.name == null && parameters.type == null){
             res.status(400).jsonp({msg:"To make a research, please provide at least one parameter."});
         } else {
-            db.query("SELECT company.id AS companyId, company.company_type AS companyTypeId, company.name AS companyName, company.logo_link AS logo, company.description AS description, company_location.street_number AS streetNumber, company_location.street_name AS streetName, company_location.city AS city FROM company INNER JOIN company_location ON company_location.company = company.id WHERE (company_location.city = ? OR ? IS NULL) AND company.active = 1 AND company.verified = 1 AND (company.name LIKE ? OR ? IS NULL) AND (company.company_type = ? OR ? IS NULL) ORDER BY company.registration_date ASC LIMIT ?, ?", [parameters.city, parameters.city, parameters.name, parameters.name, parameters.type, parameters.type, parameters.page_p1, parameters.page_p2], (err, rows, results) => {
+            db.query("SELECT company.id AS companyId, company.company_type AS companyTypeId, company.name AS companyName, company.logo_link AS logoLink, company.description AS description, company_location.street_number AS streetNumber, company_location.street_name AS streetName, company_location.city AS city FROM company INNER JOIN company_location ON company_location.company = company.id WHERE (company_location.city = ? OR ? IS NULL) AND company.active = 1 AND company.verified = 1 AND (company.name LIKE ? OR ? IS NULL) AND (company.company_type = ? OR ? IS NULL) ORDER BY company.registration_date ASC LIMIT ?, ?", [parameters.city, parameters.city, parameters.name, parameters.name, parameters.type, parameters.type, parameters.page_p1, parameters.page_p2], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
                 } else {
                     if (rows[0]) {
+                        const bucketName = "fidelight-api";
+                        var counter = 0;
+                        rows.forEach(company => {
+                            if(company.logoLink == null){
+                            } else {
+                                rows[counter].logoLink = format(
+                                    `https://storage.googleapis.com/${bucketName}/${company.logoLink}`
+                                );
+                            }
+                            counter++;
+                        });
                         res.status(200).jsonp({data: rows, msg: "success"});
                     } else {
                         res.status(404).jsonp({msg:"Company not found!"});
