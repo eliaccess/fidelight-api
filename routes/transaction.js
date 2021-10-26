@@ -131,8 +131,10 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
-                                    } else {
+                                    } else if (rows2[0] != null) {
                                         transact.push({id: rws.id, discountId: rws.discount, discountName: rows2[0].name, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
+                                    } else {
+                                        transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
                                     }
                                 });
                             } else {
