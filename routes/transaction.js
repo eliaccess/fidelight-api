@@ -81,11 +81,11 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                     next(err);
                 } else {
                     if (rows[0]) {
-                        let transact = [];
+                        var transact = [];
                         rows.forEach(rws => {
                             /* Separating rewards and offers usage */
-                            if(rows[0].discount != null){
-                               db.query("SELECT name FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
+                            if(rws.discount != null){
+                               db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
@@ -111,7 +111,7 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                     next(err);
                 } else {
                     if (rows[0]) {
-                        let transact = [];
+                        var transact = [];
                         rows.forEach(rws => {
                             /* Generating logo links for companies */
                             const bucketName = "fidelight-api";
@@ -127,8 +127,8 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                                 counter++;
                             });
                             /* Separating rewards and offers usage */
-                            if(rows[0].discount != null){
-                               db.query("SELECT name FROM discount WHERE id = ?", [rows[0].discount], (err, rows2, result) => {
+                            if(rws.discount != null){
+                               db.query("SELECT name FROM discount WHERE id = ?", [rws.discount], (err, rows2, result) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
