@@ -64,7 +64,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(409).jsonp("Your email address or phone number is already registered !");
+                    res.status(409).jsonp({msg:"Your email address or phone number is already registered !"});
                 } else {
                     db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
                         if (err) {
