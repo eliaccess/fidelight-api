@@ -304,16 +304,24 @@
 
 ```json
 {
-  "data":{
-    "topDiscounts": [
-      {
-        "discount": 9,
-      },
-      {
-        "discount": 12,
-      },
-    ]
-  },
+  "data":[
+    {
+      "id": 9,
+      "timesUsed": 25,
+      "name": "-25% on every tacos",
+      "description": "Eat your tacos for only 6 euros !",
+      "cost": 25,
+      "pictureLink": "https://storage.google.com/discount/miam_miam.png"
+    },
+    {
+      "id": 4,
+      "timesUsed": 12,
+      "name": "Your free haircut !",
+      "description": "Come and get a new style for only 25 fidelity points!",
+      "cost": 25,
+      "pictureLink": "https://storage.google.com/discount/haircut_design_free.png"
+    },
+  ],
   "msg": "success"
 }
 ```
