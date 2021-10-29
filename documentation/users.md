@@ -357,11 +357,19 @@ To define
 
 # Remove a company from likes
 
-**URL** : `https://api.fidelight.fr/v1/user/like/$company.id`
+**URL** : `https://api.fidelight.fr/v1/user/like/`
 
 **Method** : `DELETE`
 
 **Auth required** : YES
+
+**Content example**
+
+```json
+{
+  "company": 31
+}
+```
 
 ## Success Response
 

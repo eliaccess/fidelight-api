@@ -222,13 +222,13 @@ router.post('/v1/user/like/', likeAuth, (req, res, next) => {
     }
 });
 
-router.delete('/v1/user/like/:companyId', midWare.checkToken, (req, res, next) => {
+router.delete('/v1/user/like/', likeAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
-        db.query("SELECT * FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.params.companyId], (err, rows, results) => {
+        db.query("SELECT * FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.body.company], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
@@ -236,7 +236,7 @@ router.delete('/v1/user/like/:companyId', midWare.checkToken, (req, res, next) =
                 if(!rows[0]){
                     res.status(200).jsonp("This company is not in your likes!");
                 } else {
-                    db.query("DELETE FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.params.companyId], (err, rows, results) => {
+                    db.query("DELETE FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.body.company], (err, rows, results) => {
                         if (err) {
                             res.status(410).jsonp({msg:err});
                             next(err);
