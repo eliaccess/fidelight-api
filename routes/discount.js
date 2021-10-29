@@ -636,11 +636,12 @@ router.get('/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) =
         let offers = [];
         today = new Date();
 
-        db.query("SELECT id, times_used FROM discount WHERE company = ANY (SELECT company.id FROM company_location INNER JOIN company ON company_location.company = company.id WHERE company_location.city = ? AND company.active = 1 ORDER BY company.registration_date ASC) AND discount.active = 1 AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) ORDER BY times_used ASC LIMIT 6", [req.params.city, today, today], (err, rows, results) => {
+        db.query("SELECT id, times_used AS timesUsed, name, description, cost, picture_link AS pictureLink FROM discount WHERE company = ANY (SELECT company.id FROM company_location INNER JOIN company ON company_location.company = company.id WHERE company_location.city = ? AND company.active = 1 ORDER BY company.registration_date ASC) AND discount.active = 1 AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.times_used < discount.nb_max) ORDER BY times_used ASC LIMIT 6", [req.params.city, today, today], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
             } else if (rows[0]){
+                /*
                 rows.forEach(element => {
                     offers.push({
                         discount: element.id,
@@ -652,6 +653,11 @@ router.get('/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) =
                 
                 topIndexes.forEach(ind => {
                     topDiscounts.push({discount: ind});
+                });
+                */
+                var topDiscounts = []
+                rows.forEach(element => {
+                    topDiscounts.push(element)
                 });
                 res.status(200).jsonp({data:topDiscounts, msg:"success"});
             } else {
