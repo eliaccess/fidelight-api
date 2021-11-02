@@ -340,13 +340,13 @@ To define
         "id": 10,
         "name": "The Kebabos",
         "description":"The best Kebab of the year",
-        "logoLink" : "https://storage.google.com/company/logo/the_kebabos_a66azsds6.png"
+        "logoUrl" : "https://storage.google.com/company/logo/the_kebabos_a66azsds6.png"
       },
       {
         "id": 85,
         "name": "Tea Time",
         "description":"Since 1981",
-        "logoLink" : "https://storage.google.com/company/logo/tea_time_f65sqa.png"
+        "logoUrl" : "https://storage.google.com/company/logo/tea_time_f65sqa.png"
       }
     ]
   },

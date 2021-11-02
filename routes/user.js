@@ -153,7 +153,6 @@ let likeAuth = [
 ];
 
 
-/* TODO: ADD Company information */
 router.post('/v1/user/like/', likeAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
@@ -258,7 +257,7 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         }
-        db.query("SELECT company.id AS id, company.name AS name, company.description AS description, company.logo_link AS logoLink FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
+        db.query("SELECT company.id AS id, company.name AS name, company.description AS description, company.logo_link AS logoUrl FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
@@ -266,11 +265,11 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
                 const bucketName = "fidelight-api";
                 var counter = 0;
                 rows.forEach(company => {
-                    if(company.logoLink == null){
-                        rows[counter].logoLink = null;
+                    if(company.logoUrl == null){
+                        rows[counter].logoUrl = null;
                     } else {
-                        rows[counter].logoLink = format(
-                            `https://storage.googleapis.com/${bucketName}/${company.logoLink}`
+                        rows[counter].logoUrl = format(
+                            `https://storage.googleapis.com/${bucketName}/${company.logoUrl}`
                         );
                     }
                     counter++;

@@ -46,7 +46,7 @@ const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET);
 
 router.get('/v1/company/types', (req, res, next) => {
     try {
-        db.query("SELECT id, name, description, logo_link AS logoLink FROM company_type", (err, rows, result) => {
+        db.query("SELECT id, name, description, logo_link AS logoUrl FROM company_type", (err, rows, result) => {
             if (err) {
                 res.status(410).jsonp(err);
                 next(err);
@@ -56,11 +56,11 @@ router.get('/v1/company/types', (req, res, next) => {
 
                     var counter = 0;
                     rows.forEach(type => {
-                        if(type.logoLink == null){
-                            rows[counter].logoLink = null;
+                        if(type.logoUrl == null){
+                            rows[counter].logoUrl = null;
                         } else {
-                            rows[counter].logoLink = format(
-                                `https://storage.googleapis.com/${bucketName}/${type.logoLink}`
+                            rows[counter].logoUrl = format(
+                                `https://storage.googleapis.com/${bucketName}/${type.logoUrl}`
                             );
                         }
                         counter++;
@@ -298,7 +298,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                                 res.status(410).jsonp({msg: err});
                                                 next(err);
                                             } else {
-                                                res.status(200).jsonp({msg:"Logo added successfully!", data: {logo: publicUrl}});
+                                                res.status(200).jsonp({msg:"Logo added successfully!", data: {logoUrl: publicUrl}});
                                             }
                                         });
                                     });
@@ -324,7 +324,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                             res.status(410).jsonp({msg: err});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({msg:"Logo added successfully!", data: {logo: publicUrl}});
+                                            res.status(200).jsonp({msg:"Logo added successfully!", data: {logoUrl: publicUrl}});
                                         }
                                     });
                                 });
@@ -725,10 +725,10 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             email: rows[0].email,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            logo: publicUrlLogo,
-                            background_picture: publicUrlBackgroundPicture,
-                            street_number: rows[0].street_number,
-                            street_name: rows[0].street_name,
+                            logoUrl: publicUrlLogo,
+                            backgroundPicture: publicUrlBackgroundPicture,
+                            streetNumber: rows[0].street_number,
+                            streetName: rows[0].street_name,
                             city: rows[0].city,
                             country: rows[0].country,
                         }
@@ -769,10 +769,10 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            logo: publicUrl,
+                            logoUrl: publicUrl,
                             background_picture: rows[0].background_picture,
-                            street_number: rows[0].street_number,
-                            street_name: rows[0].street_name,
+                            streetNumber: rows[0].street_number,
+                            streetName: rows[0].street_name,
                             city: rows[0].city,
                             country: rows[0].country,
                         }

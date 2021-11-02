@@ -19,13 +19,13 @@
         "id": 1,
         "title": "Bakery",
         "description": "A place that sells some nice bread.",
-        "logoLink": "https://storage.fidelight.com/bakery.png"
+        "logoUrl": "https://storage.fidelight.com/bakery.png"
       },
       "1":{
         "id": 2,
         "title": "Restaurant",
         "description": "A shop where food is cooked and sold to feast.",
-        "logoLink": "https://storage.fidelight.com/bakery.png"
+        "logoUrl": "https://storage.fidelight.com/bakery.png"
       }
   },
   "msg": "success"
@@ -226,7 +226,7 @@ Put the file in a form, with "logo" as key.
 {
   "msg": "Logo successfully added!",
   "data":{
-    "logo": "https://storage.googleapis.com/fidelight-api/company/logo/tacos315AZD_logo.jpeg"
+    "logoUrl": "https://storage.googleapis.com/fidelight-api/company/logo/tacos315AZD_logo.jpeg"
   }
 }
 ```
@@ -275,7 +275,7 @@ Puth the file in a form, with "backgroundPicture" as key.
 {
   "msg": "Background picture successfully added!",
   "data":{
-    "logo": "https://storage.googleapis.com/fidelight-api/company/background_picture/tacos315AZD_background_picture.jpeg"
+    "backgroundPicture": "https://storage.googleapis.com/fidelight-api/company/background_picture/tacos315AZD_background_picture.jpeg"
   }
 }
 ```
@@ -329,7 +329,7 @@ Puth the file in a form, with "backgroundPicture" as key.
     "city": "Paris",
     "streetName": "Rue du Paprika",
     "streetNumber": 357,
-    "logo": "https://storage.google.com/company/cofee_shop_petunia_16515.jpg",
+    "logoUrl": "https://storage.google.com/company/cofee_shop_petunia_16515.jpg",
     "backgroundPicture": "https://storage.google.com/company/cofee_shop_petunia_16514.jpg",
     "schedule":[
       {
