@@ -806,7 +806,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                             res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else if (rows3[0]) {
-                                            companyInfo.isFavorite = true;
+                                            companyInfo.isLiked = true;
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
@@ -818,7 +818,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                             res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else if (rows3[0]) {
-                                            companyInfo.isFavorite = true;
+                                            companyInfo.isLiked = true;
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
