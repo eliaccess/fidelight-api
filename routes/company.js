@@ -761,16 +761,32 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                     if (rows[0]) {
                         // The public URL can be used to directly access the file via HTTP.
                         const bucketName = "fidelight-api";
-                        const publicUrl = format(
-                            `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
-                        );
+                        var publicUrlLogo = null;
+                        var publicUrlBackgroundPicture = null;
+
+                        if(rows[0].logo == null){
+                            publicUrlLogo = null
+                        } else {
+                            publicUrlLogo = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].logo}`
+                            );
+                        }
+
+                        if(rows[0].background_picture == null){
+                            publicUrlBackgroundPicture = null
+                        } else {
+                            publicUrlBackgroundPicture = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].background_picture}`
+                            );
+                        }
+                        
                         let companyInfo = {
                             name: rows[0].name,
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            logoUrl: publicUrl,
-                            background_picture: rows[0].background_picture,
+                            logoUrl: publicUrlLogo,
+                            backgroundPicture: publicUrlBackgroundPicture,
                             streetNumber: rows[0].street_number,
                             streetName: rows[0].street_name,
                             city: rows[0].city,
