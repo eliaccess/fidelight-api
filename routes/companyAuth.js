@@ -96,7 +96,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                         refresh_token: refToken
                                     }
                                     
-                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                    dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
                                             res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token}, msg:"Account successfully created!"});
                                             next(err);
