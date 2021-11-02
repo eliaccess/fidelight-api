@@ -14,7 +14,8 @@ const FacebookStrategy = require('passport-facebook').Strategy;
 
 // Token expiration for users can be changed here
 function getAccessToken(id, type){
-    return jwt.sign({id: id, type: type}, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1h'});
+    // PUT BACK IN PROD THE EXPIRESIN TO 1h
+    return jwt.sign({id: id, type: type}, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'365d'});
 }
 
 function getRefreshToken(id, type){
