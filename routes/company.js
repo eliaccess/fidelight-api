@@ -791,8 +791,9 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             streetName: rows[0].street_name,
                             city: rows[0].city,
                             country: rows[0].country,
+                            isLiked: false
                         }
-                        /* Adding the schedule of the company if it exists */
+                        /* Adding the schedule of the company if it exists, then checking if the company was liked by the user */
                         db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
@@ -800,9 +801,29 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             } else {
                                 if(rows2[0]){
                                     companyInfo.schedule = rows2;
-                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                    db.query("SELECT * FROM user_like WHERE company = ? AND user = ?", [req.params.companyId, req.decoded.id], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(410).jsonp({msg:err});
+                                            next(err);
+                                        } else if (rows3[0]) {
+                                            companyInfo.isFavorite = true;
+                                            res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                        } else {
+                                            res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                        }
+                                    });
                                 } else {
-                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                    db.query("SELECT * FROM user_like WHERE company = ? AND user = ?", [req.params.companyId, req.decoded.id], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(410).jsonp({msg:err});
+                                            next(err);
+                                        } else if (rows3[0]) {
+                                            companyInfo.isFavorite = true;
+                                            res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                        } else {
+                                            res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                        }
+                                    });
                                 }
                             }
                         });
