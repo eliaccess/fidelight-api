@@ -1,6 +1,6 @@
 # Search one or more companies
 
-**URL** : `https://api.fidelight.fr/v1/v1/search/company/$parameters?`
+**URL** : `https://api.fidelight.fr/v1/search/company/$parameters?`
 
 **Method** : `GET`
 
