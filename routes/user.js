@@ -265,6 +265,7 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
                 const bucketName = "fidelight-api";
                 var counter = 0;
                 rows.forEach(company => {
+                    rows[counter].isFavorite = true;
                     if(company.logoUrl == null){
                         rows[counter].logoUrl = null;
                     } else {
