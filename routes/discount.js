@@ -238,7 +238,7 @@ router.get('/api/discount', midWare.checkToken, (req, res, next) => {
 router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         const date_day = new Date();
-        db.query("SELECT discount.company AS company, discount.discount_type AS discountType, discount.times_used AS timesUsed, discount.cost AS cost, discount.name AS name, discount.description AS description, discount.picture_link AS pictureLink, discount.product AS product, discount.nb_max AS nbMax, discount.creation_date AS creationDate, discount.start_date AS startDate, discount.expiration_date AS expirationDate, discount_repetition.monday AS monday, discount_repetition.tuesday AS tuesday, discount_repetition.wednesday AS wednesday, discount_repetition.thursday AS thursday, discount_repetition.friday AS friday, discount_repetition.saturday AS saturday, discount_repetition.sunday AS sunday, discount_value.value AS value FROM discount INNER JOIN discount_repetition ON discount_repetition.discount = discount.id INNER JOIN discount_value ON discount_value.discount = discount.id WHERE (discount.company = ?) AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.nb_max > discount.times_used) AND (discount.active = 1)", [req.params.companyId, date_day, date_day], (err, rows, result) => {
+        db.query("SELECT discount.id AS id, discount.company AS company, discount.discount_type AS discountType, discount.times_used AS timesUsed, discount.cost AS cost, discount.name AS name, discount.description AS description, discount.picture_link AS pictureLink, discount.product AS product, discount.nb_max AS nbMax, discount.creation_date AS creationDate, discount.start_date AS startDate, discount.expiration_date AS expirationDate, discount_repetition.monday AS monday, discount_repetition.tuesday AS tuesday, discount_repetition.wednesday AS wednesday, discount_repetition.thursday AS thursday, discount_repetition.friday AS friday, discount_repetition.saturday AS saturday, discount_repetition.sunday AS sunday, discount_value.value AS value FROM discount INNER JOIN discount_repetition ON discount_repetition.discount = discount.id INNER JOIN discount_value ON discount_value.discount = discount.id WHERE (discount.company = ?) AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.nb_max > discount.times_used) AND (discount.active = 1)", [req.params.companyId, date_day, date_day], (err, rows, result) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
@@ -247,6 +247,24 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                     var offers=[];
                     var rewards=[];
                     rows.forEach(company => {
+                        company.perDay = {
+                            monday: company.monday,
+                            tuesday: company.tuesday,
+                            wednesday: company.wednesday,
+                            thursday: company.thursday,
+                            friday: company.friday,
+                            saturday: company.saturday,
+                            sunday: company.sunday,
+                        };
+
+                        delete company["monday"];
+                        delete company["tuesday"];
+                        delete company["wednesday"];
+                        delete company["thursday"];
+                        delete company["friday"];
+                        delete company["saturday"];
+                        delete company["sunday"];
+
                         if(company.cost == 0 || company.cost == null){
                             offers.push(company)
                         } else {
