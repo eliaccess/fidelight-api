@@ -325,6 +325,7 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
     "name": "Coffee Shop Petunia",
     "description": "Perfect Coffee is your coffee shop since 1989 ...",
     "phone": "0605040302",
+    "website": "https://www.coffee-shop-petunia.com",
     "companyType": 5,
     "country": "France",
     "city": "Paris",
@@ -371,6 +372,7 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 {
   "email": "jeff.dos-santos@gmail.com",
   "description": "Perfect Coffee is your coffee shop since 1989 ...",
+  "website": null,
   "phone": "0605040302",
   "companyType": 5,
   "country": "France",

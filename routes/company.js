@@ -564,7 +564,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                         });
 
                         /* Deleting company private information */
-                        db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+                        db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', website='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -692,7 +692,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
 router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
-            db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+            db.query("SELECT company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -753,7 +753,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                 }
             });
         } else {
-            db.query("SELECT company.name AS name, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
+            db.query("SELECT company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -843,6 +843,7 @@ let updateProf = [
     check('email', 'Username Must Be an Email Address').isEmail(),
     check('phone').exists(),
     check('description').exists(),
+    check('website').exists(),
     check('country').exists(),
     check('city').exists(),
     check('streetName').exists(),
@@ -862,6 +863,7 @@ router.put('/v1/company/profile/', updateProf, (req, res, next) => {
                 phone: req.body.phone,
                 email: req.body.email,
                 description: req.body.description,
+                website: req.body.website
             };
 
             cLocInfo = {
