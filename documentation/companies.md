@@ -311,7 +311,7 @@ Puth the file in a form, with "backgroundPicture" as key.
 **Auth required** : YES, as a user or as a company.
 
 **Details** : to get the private profile of a company, put "me" as the company id in the URL (adds the email).
-If a user gets the profile, then "isLiked" is given too to know if the user liked this company.
+If a user gets the profile, then "isFavorite" is given too to know if the user liked this company.
 
 ## Success Response
 
@@ -332,7 +332,7 @@ If a user gets the profile, then "isLiked" is given too to know if the user like
     "streetNumber": 357,
     "logoUrl": "https://storage.google.com/company/cofee_shop_petunia_16515.jpg",
     "backgroundPicture": "https://storage.google.com/company/cofee_shop_petunia_16514.jpg",
-    "isLiked": false,
+    "isFavorite": false,
     "schedule":[
       {
         "day": 1,

@@ -791,7 +791,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             streetName: rows[0].street_name,
                             city: rows[0].city,
                             country: rows[0].country,
-                            isLiked: false
+                            isFavorite: false
                         }
                         /* Adding the schedule of the company if it exists, then checking if the company was liked by the user */
                         db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
@@ -806,7 +806,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                             res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else if (rows3[0]) {
-                                            companyInfo.isLiked = true;
+                                            companyInfo.isFavorite = true;
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
@@ -818,7 +818,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                             res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else if (rows3[0]) {
-                                            companyInfo.isLiked = true;
+                                            companyInfo.isFavorite = true;
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
