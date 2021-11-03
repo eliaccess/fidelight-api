@@ -247,6 +247,14 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                     var offers=[];
                     var rewards=[];
                     rows.forEach(company => {
+                        if (company.monday == null) { company.monday = 0; }
+                        if (company.tuesday == null) { company.tuesday = 0; }
+                        if (company.wednesday == null) { company.wednesday = 0; }
+                        if (company.thursday == null) { company.thursday = 0; }
+                        if (company.friday == null) { company.friday = 0; }
+                        if (company.saturday == null) { company.saturday = 0; }
+                        if (company.sunday == null) { company.sunday = 0; }
+
                         company.perDay = {
                             monday: company.monday,
                             tuesday: company.tuesday,

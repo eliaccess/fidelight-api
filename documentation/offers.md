@@ -174,7 +174,15 @@
         "discountType": 3,
         "cost": 250,
         "name": "-4€ on the tacos",
-        "perDay": ["monday", "tuesday", "thursday"],
+        "perDay": {
+          "monday": 0,
+          "tuesday": 1,
+          "wednesday": 1,
+          "thursday": 0,
+          "friday": 0,
+          "saturday": 1,
+          "sunday": 0
+        },
         "value": 5.1
       },
       {
@@ -182,6 +190,15 @@
         "discountType": 2,
         "cost": 50,
         "name": "-50% on the tea",
+        "perDay": {
+          "monday": 1,
+          "tuesday": 1,
+          "wednesday": 1,
+          "thursday": 1,
+          "friday": 1,
+          "saturday": 1,
+          "sunday": 0
+        },
         "value": 25
       }
     ],
@@ -191,7 +208,15 @@
         "discountType": 3,
         "cost": 0,
         "name": "40% off on the kebab sandwich",
-        "perDay": ["monday", "tuesday", "thursday"],
+        "perDay": {
+          "monday": 1,
+          "tuesday": 1,
+          "wednesday": 0,
+          "thursday": 0,
+          "friday": 0,
+          "saturday": 1,
+          "sunday": 0
+        },
         "value": 2.5
       },
       {
@@ -199,6 +224,15 @@
         "discountType": 2,
         "cost": 0,
         "name": "-10% on the tea",
+        "perDay": {
+          "monday": 0,
+          "tuesday": 0,
+          "wednesday": 1,
+          "thursday": 0,
+          "friday": 0,
+          "saturday": 1,
+          "sunday": 1
+        },
         "value": 5
       }
     ]
