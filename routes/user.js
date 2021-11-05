@@ -278,7 +278,7 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
 
                 res.status(200).jsonp({data:rows, msg:"success"});
             } else {
-                res.status(200).jsonp({msg:"No company liked yet!"});
+                res.status(404).jsonp({msg:"No company liked yet!"});
             }
         });
     } catch (err) {

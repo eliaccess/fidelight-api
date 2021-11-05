@@ -130,7 +130,21 @@ router.get('/v1/company/schedule/:companyId', midWare.checkToken, (req, res, nex
                         next(err);
                     }
                     else if(rows2[0]) {
-                        res.status(200).jsonp({data: rows2, msg: "No schedule registered for this company location!"})
+                        days = {
+                            1: 'Monday',
+                            2: 'Tuesday',
+                            3: 'Wednesday',
+                            4: 'Thursday',
+                            5: 'Friday',
+                            6: 'Saturday',
+                            7: 'Sunday'
+                        }
+                        counter = 0
+                        rows2.forEach(element => {
+                            rows2[counter].dayName = days[element.day];
+                            counter++;
+                        });
+                        res.status(200).jsonp({data: rows2, msg: "success"})
                     } else {
                         res.status(404).jsonp({msg: "No schedule registered for this company location!"})
                     }
