@@ -737,7 +737,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             name: rows[0].name,
                             phone: rows[0].phone,
                             email: rows[0].email,
-                            websiteURL: rows[0].website,
+                            websiteUrl: rows[0].website,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
                             logoUrl: publicUrlLogo,
@@ -814,14 +814,15 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
-                            websiteURL: rows[0].website,
+                            websiteUrl: rows[0].website,
                             logoUrl: publicUrlLogo,
                             backgroundPicture: publicUrlBackgroundPicture,
                             streetNumber: rows[0].street_number,
                             streetName: rows[0].street_name,
                             city: rows[0].city,
                             country: rows[0].country,
-                            isFavorite: false
+                            isFavorite: false,
+                            userPoints: 0
                         }
                         /* Adding the schedule of the company if it exists, then checking if the company was liked by the user */
                         db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
@@ -852,14 +853,14 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                         next(err);
                                     } else if (rows3[0].liked != 0) {
                                         companyInfo.isFavorite = true;
-                                        if (rows3[0].points == null){
+                                        if (rows3[0].balance == null){
                                             companyInfo.userPoints = 0
                                         } else {
                                             companyInfo.userPoints = rows3[0].balance
                                         }
                                         res.status(200).jsonp({data:companyInfo, msg:"success"});
                                     } else {
-                                        if (rows3[0].points == null){
+                                        if (rows3[0].balance == null){
                                             companyInfo.userPoints = 0
                                         } else {
                                             companyInfo.userPoints = rows3[0].balance
