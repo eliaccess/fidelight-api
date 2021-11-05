@@ -845,26 +845,46 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                         counter++;
                                     });
                                     companyInfo.schedule = rows2;
-                                    db.query("SELECT * FROM user_like WHERE company = ? AND user = ?", [req.params.companyId, req.decoded.id], (err, rows3, results) => {
+                                    db.query("SELECT (SELECT COUNT(*) FROM user_like WHERE user = ? AND company = ?) AS liked, (SELECT points FROM balance WHERE user = ? and company = ?) AS balance", [req.decoded.id, req.params.companyId, req.decoded.id, req.params.companyId], (err, rows3, results) => {
                                         if(err){
                                             res.status(410).jsonp({msg:err});
                                             next(err);
-                                        } else if (rows3[0]) {
+                                        } else if (rows3[0].liked) {
                                             companyInfo.isFavorite = true;
+                                            if (rows3[0].points == null){
+                                                companyInfo.userPoints = 0
+                                            } else {
+                                                companyInfo.userPoints = rows3[0].points
+                                            }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
+                                            if (rows3[0].points == null){
+                                                companyInfo.userPoints = 0
+                                            } else {
+                                                companyInfo.userPoints = rows3[0].points
+                                            }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         }
                                     });
                                 } else {
-                                    db.query("SELECT * FROM user_like WHERE company = ? AND user = ?", [req.params.companyId, req.decoded.id], (err, rows3, results) => {
+                                    db.query("SELECT (SELECT COUNT(*) FROM user_like WHERE user = ? AND company = ?) AS liked, (SELECT points FROM balance WHERE user = ? and company = ?) AS balance", [req.decoded.id, req.params.companyId, req.decoded.id, req.params.companyId], (err, rows3, results) => {
                                         if(err){
                                             res.status(410).jsonp({msg:err});
                                             next(err);
                                         } else if (rows3[0]) {
                                             companyInfo.isFavorite = true;
+                                            if (rows3[0].points == null){
+                                                companyInfo.userPoints = 0
+                                            } else {
+                                                companyInfo.userPoints = rows3[0].points
+                                            }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
+                                            if (rows3[0].points == null){
+                                                companyInfo.userPoints = 0
+                                            } else {
+                                                companyInfo.userPoints = rows3[0].points
+                                            }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         }
                                     });
