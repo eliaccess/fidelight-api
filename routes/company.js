@@ -849,19 +849,19 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                         if(err){
                                             res.status(410).jsonp({msg:err});
                                             next(err);
-                                        } else if (rows3[0].liked) {
+                                        } else if (rows3[0].liked != 0) {
                                             companyInfo.isFavorite = true;
                                             if (rows3[0].points == null){
                                                 companyInfo.userPoints = 0
                                             } else {
-                                                companyInfo.userPoints = rows3[0].points
+                                                companyInfo.userPoints = rows3[0].balance
                                             }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
                                             if (rows3[0].points == null){
                                                 companyInfo.userPoints = 0
                                             } else {
-                                                companyInfo.userPoints = rows3[0].points
+                                                companyInfo.userPoints = rows3[0].balance
                                             }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         }
@@ -871,19 +871,19 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                         if(err){
                                             res.status(410).jsonp({msg:err});
                                             next(err);
-                                        } else if (rows3[0]) {
+                                        } else if (rows3[0] != 0) {
                                             companyInfo.isFavorite = true;
                                             if (rows3[0].points == null){
                                                 companyInfo.userPoints = 0
                                             } else {
-                                                companyInfo.userPoints = rows3[0].points
+                                                companyInfo.userPoints = rows3[0].balance
                                             }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         } else {
                                             if (rows3[0].points == null){
                                                 companyInfo.userPoints = 0
                                             } else {
-                                                companyInfo.userPoints = rows3[0].points
+                                                companyInfo.userPoints = rows3[0].balance
                                             }
                                             res.status(200).jsonp({data:companyInfo, msg:"success"});
                                         }
