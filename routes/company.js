@@ -737,6 +737,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             name: rows[0].name,
                             phone: rows[0].phone,
                             email: rows[0].email,
+                            websiteURL: website,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
                             logoUrl: publicUrlLogo,
@@ -754,6 +755,20 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                 next(err);
                             } else {
                                 if(rows2[0]){
+                                    days = {
+                                        1: 'Monday',
+                                        2: 'Tuesday',
+                                        3: 'Wednesday',
+                                        4: 'Thursday',
+                                        5: 'Friday',
+                                        6: 'Saturday',
+                                        7: 'Sunday'
+                                    }
+                                    counter = 0
+                                    rows2.forEach(element => {
+                                        rows2[counter].dayName = days[element.day];
+                                        counter++;
+                                    });
                                     companyInfo.schedule = rows2;
                                     res.status(200).jsonp({data:companyInfo, msg:"success"});
                                 } else {
@@ -799,6 +814,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
                             description: rows[0].description,
+                            websiteURL: website,
                             logoUrl: publicUrlLogo,
                             backgroundPicture: publicUrlBackgroundPicture,
                             streetNumber: rows[0].street_number,
@@ -814,6 +830,20 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                 next(err);
                             } else {
                                 if(rows2[0]){
+                                    days = {
+                                        1: 'Monday',
+                                        2: 'Tuesday',
+                                        3: 'Wednesday',
+                                        4: 'Thursday',
+                                        5: 'Friday',
+                                        6: 'Saturday',
+                                        7: 'Sunday'
+                                    }
+                                    counter = 0
+                                    rows2.forEach(element => {
+                                        rows2[counter].dayName = days[element.day];
+                                        counter++;
+                                    });
                                     companyInfo.schedule = rows2;
                                     db.query("SELECT * FROM user_like WHERE company = ? AND user = ?", [req.params.companyId, req.decoded.id], (err, rows3, results) => {
                                         if(err){
