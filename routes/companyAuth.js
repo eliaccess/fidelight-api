@@ -80,6 +80,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                             res.status(410).jsonp({msg:iErr});
                             next(iErr);
                         } else {
+                            let insertedId = result.insertedId;
                             const usrData = {
                                 company: result.insertId,
                                 phone: req.body.phone,
@@ -105,7 +106,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                     
                                     dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            emailToken = getEmailToken(result.insertId, 'company');
+                                            let emailToken = getEmailToken(insertedId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
                                             let content = emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
                                             let mailOptions = emailFunctions.generateEmailOptions(req.body.email, content);
@@ -121,7 +122,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                             }
                                             next(err);
                                         } else {
-                                            emailToken = getEmailToken(result.insertId, 'company');
+                                            let emailToken = getEmailToken(insertedId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
                                             let content = emailFunctions.generateConfirmationEmailCompany(req.body.company, linkConf);
                                             let mailOptions = emailFunctions.generateEmailOptions(req.body.email, content);
