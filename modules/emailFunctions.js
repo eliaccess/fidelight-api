@@ -13,12 +13,12 @@ const transporter = nodemailer.createTransport({
     }
 })
 
-async function sendEmail(mailOptions){
-	let info = await transporter.sendMail(mailOptions);
+function sendEmail(mailOptions){
+	let info = transporter.sendMail(mailOptions);
 	return info
 }
 
-async function generateEmailOptions(email, content){
+function generateEmailOptions(email, content){
 	return {
 	    from: {
 	        name: 'no-reply',
@@ -30,7 +30,7 @@ async function generateEmailOptions(email, content){
 	};
 }
 
-async function generateConfirmationEmailCompany(company, confirmationURL){
+function generateConfirmationEmailCompany(company, confirmationURL){
 	let html = `<h1>Email Confirmation</h1>
         <h2>Hello ${company},</h2>
         <p>Thank you for subscribing. Please confirm your email by clicking on the following link</p>
