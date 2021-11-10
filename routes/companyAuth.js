@@ -18,7 +18,7 @@ function getRefreshToken(id, type){
     return jwt.sign({id: id, type: type}, process.env.REFRESH_TOKEN_SECRET);
 }
 
-function getEmailToken(id, type){
+async function getEmailToken(id, type){
     // PUT BACK IN PROD THE EXPIRESIN TO 1h
     return jwt.sign({id: id, type: type}, process.env.EMAIL_TOKEN_SECRET);
 }
@@ -105,7 +105,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                     
                                     dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
-                                            let emailToken = getEmailToken(result.insertId, 'company');
+                                            emailToken = await getEmailToken(result.insertId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
                                             let content = await emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
@@ -121,7 +121,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                             }
                                             next(err);
                                         } else {
-                                            let emailToken = getEmailToken(result.insertId, 'company');
+                                            emailToken = await getEmailToken(result.insertId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
                                             let content = await emailFunctions.generateConfirmationEmailCompany(req.body.company, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
