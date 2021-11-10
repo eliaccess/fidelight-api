@@ -45,11 +45,11 @@ let regValidate = [
     check('country').exists()
 ];
 
-router.post('/v1/company/register', regValidate, (req, res, next) => {
+router.post('/v1/company/register', regValidate, async (req, res, next) => {
     try {
         validationResult(req).throw();
         
-        db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+        db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], async (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
@@ -75,7 +75,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                         verified: 0,
                         active: 0
                     };
-                    db.query("INSERT INTO company SET ?", [regData], (iErr, result) => {
+                    db.query("INSERT INTO company SET ?", [regData], async (iErr, result) => {
                         if (iErr) {
                             res.status(410).jsonp({msg:iErr});
                             next(iErr);
@@ -91,7 +91,7 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                 country: req.body.country,
                                 billing_adress: 1
                             };
-                            db.query("INSERT INTO company_location SET ?", [usrData], (iaErr, logResult) => {
+                            db.query("INSERT INTO company_location SET ?", [usrData], async (iaErr, logResult) => {
                                 if (iaErr) {
                                     res.status(410).jsonp({msg:iaErr});
                                     next(iaErr);
@@ -104,13 +104,13 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                         refresh_token: refToken
                                     }
                                     
-                                    dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                    dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
-                                            let emailToken = getEmailToken(insertedId, 'company');
+                                            let emailToken = await getEmailToken(insertedId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
-                                            let content = emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
-                                            let mailOptions = emailFunctions.generateEmailOptions(req.body.email, content);
-                                            let result = emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+                                            let content = await emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
+                                            let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                            let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
 
                                             if (result){
                                                 let msg = "Email sent to " + mailOptions.to;
@@ -122,11 +122,11 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                             }
                                             next(err);
                                         } else {
-                                            let emailToken = getEmailToken(insertedId, 'company');
+                                            let emailToken = await getEmailToken(insertedId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
-                                            let content = emailFunctions.generateConfirmationEmailCompany(req.body.company, linkConf);
-                                            let mailOptions = emailFunctions.generateEmailOptions(req.body.email, content);
-                                            let result = emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+                                            let content = await emailFunctions.generateConfirmationEmailCompany(req.body.company, linkConf);
+                                            let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                            let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
 
                                             if (result){
                                                 let msg = "Email sent to " + mailOptions.to;
