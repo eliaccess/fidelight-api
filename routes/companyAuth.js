@@ -6,6 +6,7 @@ const db = require('../modules/dbConnect');
 const bcrypt = require('bcryptjs');
 const dbAuth = require('../modules/dbConnectAuth');
 const { check, validationResult } = require('express-validator');
+var emailFunctions = require('../modules/emailFunctions');
 
 // Token expiration for companies can be changed here
 function getAccessToken(id, type){
@@ -15,6 +16,11 @@ function getAccessToken(id, type){
 
 function getRefreshToken(id, type){
     return jwt.sign({id: id, type: type}, process.env.REFRESH_TOKEN_SECRET);
+}
+
+function getEmailToken(id, type){
+    // PUT BACK IN PROD THE EXPIRESIN TO 1h
+    return jwt.sign({id: id, type: type}, process.env.EMAIL_TOKEN_SECRET);
 }
 
 function logGen(length) {
@@ -39,7 +45,7 @@ let regValidate = [
     check('country').exists()
 ];
 
-router.post('/v1/company/register', regValidate, (req, res, next) => {
+router.post('/v1/company/register', regValidate, async (req, res, next) => {
     try {
         validationResult(req).throw();
         
@@ -99,10 +105,36 @@ router.post('/v1/company/register', regValidate, (req, res, next) => {
                                     
                                     dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token}, msg:"Account successfully created!"});
+                                            let emailToken = getEmailToken(result.insertId, 'company');
+                                            let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
+                                            let content = await emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
+                                            let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                            let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                            if (result){
+                                                let msg = "Email sent to " + mailOptions.to;
+                                                res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token}, msg: msg});
+                                            } else {
+                                                console.log("Error: mail not sent");
+                                                let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                res.status(500).jsonp({data:{id: result.insertId, login: logGened, accessToken: token}, msg: msg});
+                                            }
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token, refreshToken: refToken}, msg:"Account successfully created!"});
+                                            let emailToken = getEmailToken(result.insertId, 'company');
+                                            let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
+                                            let content = await emailFunctions.generateConfirmationEmailCompany(req.body.company, linkConf);
+                                            let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                            let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                            if (result){
+                                                let msg = "Email sent to " + mailOptions.to;
+                                                res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token, refreshToken: refToken}, msg: msg});
+                                            } else {
+                                                console.log("Error: mail not sent");
+                                                let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                res.status(500).jsonp({data:{id: result.insertId, login: logGened, accessToken: token, refreshToken: refToken}, msg: msg});
+                                            }
                                         }
                                     });
                                 }
