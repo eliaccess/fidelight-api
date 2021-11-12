@@ -80,7 +80,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                             res.status(410).jsonp({msg:iErr});
                             next(iErr);
                         } else {
-                            let insertedId = result.insertedId;
+                            let insertedId = result.insertId;
                             const usrData = {
                                 company: result.insertId,
                                 phone: req.body.phone,
