@@ -986,17 +986,28 @@ router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next
     }
 });
 
-router.post('/v1/company/verify/:token', (req, res, next) => {
+router.get('/v1/company/verify/:token', (req, res, next) => {
     try {
     	const decodedToken = jwt.verify(req.params.token, process.env.EMAIL_TOKEN_SECRET);
 
     	if(decodedToken.type == 'company' && decodedToken.id){
-    		db.query("SELECT verified FROM company WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+    		db.query("SELECT verified, active FROM company WHERE id = ?", [decodedToken.id], (err, rows, results) => {
     			if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
                 } else if(rows[0]){
-                	if(rows[0].verified != 1){
+                	// route for new accounts
+                	if(rows[0].verified != 1 && rows[0].active = 2){
+                		db.query("UPDATE company SET verified = 1, active = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                			if (err) {
+			                    res.status(410).jsonp({msg:err});
+			                    next(err);
+			                } else {
+			                	res.status(200).jsonp({msg:'Your account has been verified !'});
+			                }
+                		});
+                	// route for active / banned accounts
+                	} else if (rows[0].verified != 1){
                 		db.query("UPDATE company SET verified = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                 			if (err) {
 			                    res.status(410).jsonp({msg:err});
@@ -1005,6 +1016,7 @@ router.post('/v1/company/verify/:token', (req, res, next) => {
 			                	res.status(200).jsonp({msg:'Your account has been verified !'});
 			                }
                 		});
+                	// route for verified accounts
                 	} else {
                 		res.status(403).json({msg:'Your account has already been verified.'});
                 	}
