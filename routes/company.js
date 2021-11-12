@@ -997,7 +997,7 @@ router.get('/v1/company/verify/:token', (req, res, next) => {
                     next(err);
                 } else if(rows[0]){
                 	// route for new accounts
-                	if(rows[0].verified != 1 && rows[0].active = 2){
+                	if((rows[0].verified != 1) && (rows[0].active == 2)){
                 		db.query("UPDATE company SET verified = 1, active = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                 			if (err) {
 			                    res.status(410).jsonp({msg:err});
