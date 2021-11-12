@@ -986,6 +986,40 @@ router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next
     }
 });
 
+router.post('/v1/company/verify/:token', (req, res, next) => {
+    try {
+    	const decodedToken = jwt.verify(req.params.token, process.env.EMAIL_TOKEN_SECRET);
+
+    	if(decodedToken.type == 'company' && decodedToken.id){
+    		db.query("SELECT verified FROM company WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+    			if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else if(rows[0]){
+                	if(rows[0].verified != 1){
+                		db.query("UPDATE company SET verified = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                			if (err) {
+			                    res.status(410).jsonp({msg:err});
+			                    next(err);
+			                } else {
+			                	res.status(200).jsonp({msg:'Your account has been verified !'});
+			                }
+                		});
+                	} else {
+                		res.status(403).json({msg:'Your account has already been verified.'});
+                	}
+                } else {
+                	res.status(404).json({msg:'An issue occured finding your company account. Please contact the support.'});
+                }
+    		});
+    	} else {
+    		res.status(401).json({msg:'Please provide a valide token.'});
+    	}
+    } catch (err) {
+        res.status(400).json({msg:err});
+    }
+});
+
 /*
 router.get('/api/company/location/:companyLocId', midWare.checkToken, (req, res, next) => {
     try {
