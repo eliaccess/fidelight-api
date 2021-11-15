@@ -14,20 +14,18 @@
 
 ```json
 {
-  "data":{
-    "types": [
-      {
-        "id": 1,
-        "title": "Free ticket",
-        "description": "The custommer will have a free prestation next time he will be visiting your shop!"
-      },
-      {
-        "id": 2,
-        "title": "Percentage of the price",
-        "description": "The custommer will have a discount that values a percent (that your can define) of the price."
-      }
-    ]
-  },
+  "data":[
+    {
+      "id": 1,
+      "title": "Free ticket",
+      "description": "The custommer will have a free prestation next time he will be visiting your shop!"
+    },
+    {
+      "id": 2,
+      "title": "Percentage of the price",
+      "description": "The custommer will have a discount that values a percent (that your can define) of the price."
+    }
+  ],
   "msg": "success"
 }
 ```
