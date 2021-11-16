@@ -32,7 +32,6 @@ let disValidate = [
     check('cost').exists(),
     check('name').exists(),
     check('description').exists(),
-    check('product').exists(),
     check('perDay').exists(),
     check('value').exists(),
     midWare.checkToken
@@ -54,8 +53,8 @@ router.post('/v1/discount', disValidate, (req, res, next) => {
                 cost: req.body.cost,
                 name: req.body.name,
                 description: req.body.description,
-                picture_link: "",
-                product: req.body.product,
+                picture_link: null,
+                product: (req.body.product) ? req.body.product : null,
                 nb_max: req.body.nbMax,
                 creation_date: new Date(),
                 start_date: (req.body.startDate) ? req.body.startDate : new Date,
@@ -89,7 +88,7 @@ router.post('/v1/discount', disValidate, (req, res, next) => {
                             const dValue = {
                                 user_type: 1,
                                 discount: result.insertId,
-                                value: req.body.value
+                                value: (req.body.value) ? req.body.value : null
                             }
                             db.query("INSERT INTO discount_value SET ?", [dValue], (vErr, vResult) => {
                                 if (vErr) {
