@@ -58,7 +58,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                     res.status(409).jsonp({msg:"Your email address is already registered !"});
                 } else {
                     const BCRYPT_SALT_ROUNDS = 12;
-                    logGened = logGen(10);                    
+                    logGened = logGen(10);
                     
                     const regData = {
                         login: logGened,
@@ -124,7 +124,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                         } else {
                                             let emailToken = await getEmailToken(insertedId, 'company');
                                             let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
-                                            let content = await emailFunctions.generateConfirmationEmailCompany(req.body.company, linkConf);
+                                            let content = await emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
                                             let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
 
