@@ -734,6 +734,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         }
                         
                         let companyInfo = {
+                            id: rows[0].id,
                             name: rows[0].name,
                             phone: rows[0].phone,
                             email: rows[0].email,
@@ -810,6 +811,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         }
                         
                         let companyInfo = {
+                            id: rows[0].id,
                             name: rows[0].name,
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
