@@ -706,7 +706,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
 router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
-            db.query("SELECT company.id AS id, company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+            db.query("SELECT company.id AS id, company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registrationDate, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -739,7 +739,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             phone: rows[0].phone,
                             email: rows[0].email,
                             websiteUrl: rows[0].website,
-                            registration_date: rows[0].registration_date.split("T")[0],
+                            registrationDate: rows[0].registrationDate.toISOString().split("T")[0],
                             description: rows[0].description,
                             logoUrl: publicUrlLogo,
                             backgroundPicture: publicUrlBackgroundPicture,
@@ -783,7 +783,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                 }
             });
         } else {
-            db.query("SELECT company.id AS id, company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
+            db.query("SELECT company.id AS id, company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registrationDate, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -814,7 +814,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             id: rows[0].id,
                             name: rows[0].name,
                             phone: rows[0].phone,
-                            registration_date: rows[0].registration_date.split("T")[0],
+                            registrationDate: rows[0].registrationDate.toISOString().split("T")[0],
                             description: rows[0].description,
                             websiteUrl: rows[0].website,
                             logoUrl: publicUrlLogo,
