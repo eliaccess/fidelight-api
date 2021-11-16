@@ -68,7 +68,8 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: rows[0].birthdate}, msg:"success"});
+                    let birthdate = rows[0].birthdate ? rows[0].birthdate.split("T")[0] : null;
+                    res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate}, msg:"success"});
                 } else {
                     res.status(404).jsonp({msg:"Profile not found!"});
                 }

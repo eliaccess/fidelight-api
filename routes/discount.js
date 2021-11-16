@@ -125,19 +125,7 @@ router.post('/v1/discount', disValidate, (req, res, next) => {
     });
 */
 
-
-let upDisValidate = [
-    check('discountType').exists(),
-    check('cost').exists(),
-    check('name').exists(),
-    check('description').exists(),
-    check('product').exists(),
-    check('perDay').exists(),
-    check('value').exists(),
-    midWare.checkToken
-];
-
-router.put('/v1/discount/:discountId', upDisValidate, (req, res, next) => {
+router.put('/v1/discount/:discountId', disValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -246,6 +234,18 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                     var offers=[];
                     var rewards=[];
                     rows.forEach(company => {
+                        if (company.creationDate != null){
+                            company.creationDate = company.creationDate.split("T")[0];
+                        }
+
+                        if (company.startDate != null){
+                            company.startDate = company.startDate.split("T")[0];
+                        }
+
+                        if (company.expirationDate != null){
+                            company.expirationDate = company.expirationDate.split("T")[0];
+                        }
+
                         if (company.monday == null) { company.monday = 0; }
                         if (company.tuesday == null) { company.tuesday = 0; }
                         if (company.wednesday == null) { company.wednesday = 0; }
@@ -298,7 +298,11 @@ router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]){
-                    res.status(200).jsonp({data:{id: req.params.discountId, company: rows[0].company, discountType: rows[0].discountType, timesUsed: rows[0].timesUsed, cost: rows[0].cost, name: rows[0].name, description: rows[0].description, pictureLink: rows[0].pictureLink, product: rows[0].product, nbMax: rows[0].nbMax, creationDate: rows[0].creationDate, startDate: rows[0].startDate, expirationDate: rows[0].expirationDate, perDay: {monday: rows[0].monday, tuesday: rows[0].tuesday, wednesday: rows[0].wednesday, thursday: rows[0].thursday, friday: rows[0].friday, saturday: rows[0].saturday, sunday: rows[0].sunday}, value: rows[0].value}, msg:"success"});
+                    let creationDate = rows[0].creationDate ? rows[0].creationDate.split("T")[0] : null;
+                    let startDate = rows[0].startDate ? rows[0].startDate.split("T")[0] : null;
+                    let expirationDate = rows[0].expirationDate ? rows[0].expirationDate.split("T")[0] : null;
+
+                    res.status(200).jsonp({data:{id: req.params.discountId, company: rows[0].company, discountType: rows[0].discountType, timesUsed: rows[0].timesUsed, cost: rows[0].cost, name: rows[0].name, description: rows[0].description, pictureLink: rows[0].pictureLink, product: rows[0].product, nbMax: rows[0].nbMax, creationDate: creationDate, startDate: startDate, expirationDate: expirationDate, perDay: {monday: rows[0].monday, tuesday: rows[0].tuesday, wednesday: rows[0].wednesday, thursday: rows[0].thursday, friday: rows[0].friday, saturday: rows[0].saturday, sunday: rows[0].sunday}, value: rows[0].value}, msg:"success"});
                 } else {
                     res.status(404).jsonp({msg:"Discount not found."});
                 }
