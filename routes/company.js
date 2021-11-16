@@ -706,7 +706,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
 router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
-            db.query("SELECT company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
+            db.query("SELECT company.id AS id, company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -734,6 +734,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         }
                         
                         let companyInfo = {
+                            id: rows[0].id,
                             name: rows[0].name,
                             phone: rows[0].phone,
                             email: rows[0].email,
@@ -782,7 +783,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                 }
             });
         } else {
-            db.query("SELECT company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
+            db.query("SELECT company.id AS id, company.name AS name, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registration_date, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -810,6 +811,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         }
                         
                         let companyInfo = {
+                            id: rows[0].id,
                             name: rows[0].name,
                             phone: rows[0].phone,
                             registration_date: rows[0].registration_date,
@@ -981,6 +983,52 @@ router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next
                 }
             });
         }
+    } catch (err) {
+        res.status(400).json({msg:err});
+    }
+});
+
+router.get('/v1/company/verify/:token', (req, res, next) => {
+    try {
+    	const decodedToken = jwt.verify(req.params.token, process.env.EMAIL_TOKEN_SECRET);
+
+    	if(decodedToken.type == 'company' && decodedToken.id){
+    		db.query("SELECT verified, active FROM company WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+    			if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else if(rows[0]){
+                	// route for new accounts
+                	if((rows[0].verified != 1) && (rows[0].active == 2)){
+                		db.query("UPDATE company SET verified = 1, active = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                			if (err) {
+			                    res.status(410).jsonp({msg:err});
+			                    next(err);
+			                } else {
+			                	res.status(200).jsonp({msg:'Your account has been verified !'});
+			                }
+                		});
+                	// route for active / banned accounts
+                	} else if (rows[0].verified != 1){
+                		db.query("UPDATE company SET verified = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                			if (err) {
+			                    res.status(410).jsonp({msg:err});
+			                    next(err);
+			                } else {
+			                	res.status(200).jsonp({msg:'Your account has been verified !'});
+			                }
+                		});
+                	// route for verified accounts
+                	} else {
+                		res.status(403).json({msg:'Your account has already been verified.'});
+                	}
+                } else {
+                	res.status(404).json({msg:'An issue occured finding your company account. Please contact the support.'});
+                }
+    		});
+    	} else {
+    		res.status(401).json({msg:'Please provide a valide token.'});
+    	}
     } catch (err) {
         res.status(400).json({msg:err});
     }
