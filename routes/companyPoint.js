@@ -61,7 +61,11 @@ router.get('/v1/company/points/:companyId', midWare.checkToken, (req, res, next)
                 res.status(410).jsonp({msg:err});
                 next(err);
             } else {
-                res.status(200).jsonp({data:{type: rows[0].points_earning_type, value:  rows[0].value }, msg:"success"});
+                if(rows){
+                    res.status(200).jsonp({data:{type: rows[0].points_earning_type, value:  rows[0].value }, msg:"success"});
+                } else {
+                    res.status(404).jsonp({msg:"No earning policy defined for this company!"})
+                }                
             }
         });
     } catch (err) {
