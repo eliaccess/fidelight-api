@@ -30,6 +30,7 @@ const multer = Multer({
     limits: {
       fileSize: 5 * 1024 * 1024, // no larger than 5mb, you can change as needed.
     },
+    fileFilter: fileFilter,
     filename: function(req, file, cb){
         cb(null, '/company/logo/' + new Date().toISOString() + file.originalname);
     },
