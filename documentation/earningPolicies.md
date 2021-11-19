@@ -51,7 +51,9 @@
 {
   "data":{
     "type": 1,
-    "value": 15
+    "title": "Points per visit",
+    "description": "Give the customer an amount of fidelity points every time he visits you!",
+    "value": 15,
   },
   "msg": "success"
 }
