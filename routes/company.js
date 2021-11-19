@@ -911,7 +911,7 @@ router.put('/v1/company/profile/', updateProf, (req, res, next) => {
                 phone: req.body.phone,
                 email: req.body.email,
                 description: req.body.description,
-                website: req.body.website
+                website: req.body.websiteUrl
             };
 
             cLocInfo = {
