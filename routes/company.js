@@ -748,6 +748,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             streetNumber: rows[0].street_number,
                             streetName: rows[0].street_name,
                             city: rows[0].city,
+                            address: rows[0].street_number + ' ' + rows[0].street_name + ', ' + rows[0].city,
                             country: rows[0].country,
                         }
 
@@ -825,6 +826,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                             streetNumber: rows[0].street_number,
                             streetName: rows[0].street_name,
                             city: rows[0].city,
+                            address: rows[0].street_number + ' ' + rows[0].street_name + ', ' + rows[0].city,
                             country: rows[0].country,
                             isFavorite: false,
                             userPoints: 0
@@ -891,7 +893,7 @@ let updateProf = [
     check('email', 'Username Must Be an Email Address').isEmail(),
     check('phone').exists(),
     check('description').exists(),
-    check('website').exists(),
+    check('websiteUrl').exists(),
     check('country').exists(),
     check('city').exists(),
     check('streetName').exists(),
