@@ -62,7 +62,18 @@ router.get('/v1/company/points/:companyId', midWare.checkToken, (req, res, next)
                 next(err);
             } else {
                 if(rows[0]){
-                    res.status(200).jsonp({data:{type: rows[0].points_earning_type, value:  rows[0].value }, msg:"success"});
+                    db.query("SELECT * FROM points_earning_type WHERE id = ?", [rows[0].points_earning_type], (err, rows2, result) => {
+                        if(err){
+                            res.status(410).jsonp({msg:err});
+                            next(err);
+                        } else {
+                            if(rows2[0]){
+                                res.status(400).jsonp({msg:"The type of earning policy is not valid. Please contact support."});
+                            } else {
+                                res.status(200).jsonp({data:{type: rows[0].points_earning_type, value: rows[0].value, title: rows2[0].title, description: rows2[0].description }, msg:"success"});
+                            }
+                        }
+                    });
                 } else {
                     res.status(404).jsonp({msg:"No earning policy defined for this company!"})
                 }                
