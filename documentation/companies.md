@@ -322,15 +322,17 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 ```json
 {
   "data":{
+    "id": 51,
     "name": "Coffee Shop Petunia",
     "description": "Perfect Coffee is your coffee shop since 1989 ...",
     "phone": "0605040302",
-    "website": "https://www.coffee-shop-petunia.com",
+    "websiteUrl": "https://www.coffee-shop-petunia.com",
     "companyType": 5,
     "country": "France",
     "city": "Paris",
     "streetName": "Rue du Paprika",
     "streetNumber": 357,
+    "address": "357 Rue du Paprika, Paris",
     "logoUrl": "https://storage.google.com/company/cofee_shop_petunia_16515.jpg",
     "backgroundPicture": "https://storage.google.com/company/cofee_shop_petunia_16514.jpg",
     "isFavorite": false,
@@ -372,7 +374,7 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 {
   "email": "jeff.dos-santos@gmail.com",
   "description": "Perfect Coffee is your coffee shop since 1989 ...",
-  "website": null,
+  "websiteUrl": null,
   "phone": "0605040302",
   "companyType": 5,
   "country": "France",

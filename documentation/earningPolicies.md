@@ -57,6 +57,29 @@
 }
 ```
 
+# Define the earning policy of a company
+
+**URL** : `https://api.fidelight.fr/v1/company/points`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+## Request Format
+
+**Content example**
+
+```json
+{
+  "type": 1,
+  "value": 15
+}
+```
+
+## Success Response
+
+**Code** : `200 OK`
+
 
 # Edit the earning policy of a company
 
