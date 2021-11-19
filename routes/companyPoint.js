@@ -68,9 +68,9 @@ router.get('/v1/company/points/:companyId', midWare.checkToken, (req, res, next)
                             next(err);
                         } else {
                             if(rows2[0]){
-                                res.status(400).jsonp({msg:"The type of earning policy is not valid. Please contact support."});
-                            } else {
                                 res.status(200).jsonp({data:{type: rows[0].points_earning_type, value: rows[0].value, title: rows2[0].title, description: rows2[0].description }, msg:"success"});
+                            } else {
+                                res.status(400).jsonp({msg:"The type of earning policy is not valid. Please contact support."});
                             }
                         }
                     });
