@@ -9,7 +9,6 @@ const midWare = require('../modules/middleware');
 const { check, validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
-
 const {Storage} = require('@google-cloud/storage');
 
 // Instantiate a storage client
@@ -392,10 +391,10 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
                             }
                         });
                     } else {
-                        res.status(200).jsonp({msg:'No logo to delete !'});
+                        res.status(404).jsonp({msg:'No logo to delete !'});
                     }
                 } else {
-                    res.status(410).jsonp({msg:'Company does not exist!'});
+                    res.status(404).jsonp({msg:'Company does not exist!'});
                 }
             });
         }
