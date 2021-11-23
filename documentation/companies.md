@@ -506,7 +506,7 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 
 # Give gift points to a user
 
-**URL** : `https://api.fidelight.fr/v1/company/points/use/`
+**URL** : `https://api.fidelight.fr/v1/company/points/gift/`
 
 **Method** : `POST`
 
