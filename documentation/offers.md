@@ -149,6 +149,63 @@
 ```
 
 
+# Add / Edit the picture of a discount
+
+**URL** : `https://api.fidelight.fr/v1/discount/picture`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+## Request Format
+
+Put the file in a form, with "picture" as key.
+
+**Content example**
+
+```json
+{
+  "discount": 7
+}
+```
+
+## Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "msg": "Picture successfully added!",
+  "data":{
+    "pictureUrl": "https://storage.googleapis.com/fidelight-api/discount/kebab44_picture.jpeg"
+  }
+}
+```
+
+
+# Delete the logo of a company
+
+**URL** : `https://api.fidelight.fr/v1/discount/picture`
+
+**Method** : `DELETE`
+
+**Auth required** : YES
+
+## Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "msg": "Picture successfully deleted!"
+}
+```
+
+
 # List all offers or discounts of a company
 
 **URL** : `https://api.fidelight.fr/v1/discount/company/$company.id`

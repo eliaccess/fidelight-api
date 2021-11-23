@@ -1,6 +1,6 @@
 # Get company types
 
-**URL** : `https://api.fidelight.fr/v1/company/type`
+**URL** : `https://api.fidelight.fr/v1/company/types`
 
 **Method** : `GET`
 
@@ -14,20 +14,20 @@
 
 ```json
 {
-  "data":{
-      "0":{
+  "data":[
+      {
         "id": 1,
         "title": "Bakery",
         "description": "A place that sells some nice bread.",
         "logoUrl": "https://storage.fidelight.com/bakery.png"
       },
-      "1":{
+      {
         "id": 2,
         "title": "Restaurant",
         "description": "A shop where food is cooked and sold to feast.",
         "logoUrl": "https://storage.fidelight.com/bakery.png"
       }
-  },
+  ],
   "msg": "success"
 }
 ```
