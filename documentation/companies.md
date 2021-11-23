@@ -504,7 +504,7 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 ```
 
 
-# Give points to a user
+# Give gift points to a user
 
 **URL** : `https://api.fidelight.fr/v1/company/points/use/`
 
@@ -520,6 +520,41 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 {
   "user": "aLFO1AlBdL.2", //Scanned from User's QR code
   "points": 100
+}
+```
+
+## Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "data":{
+    "transaction": 56464
+  },
+  "msg": "success"
+}
+```
+
+
+# Give gift points to a user using the earning policy
+
+**URL** : `https://api.fidelight.fr/v1/company/points/use/`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+## Request Format
+
+**Content example**
+
+```json
+{
+  "user": "aLFO1AlBdL.2", //Scanned from User's QR code
+  "value": 254.22
 }
 ```
 

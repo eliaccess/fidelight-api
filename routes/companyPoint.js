@@ -186,7 +186,7 @@ let usePts = [
     midWare.checkToken
 ];
 
-router.post('/v1/company/points/use/', usePts, (req, res, next) => {
+router.post('/v1/company/points/gift/', usePts, (req, res, next) => {
     try {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp({msg:'Access forbidden'});
@@ -259,6 +259,117 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
                                     }
                                 }
                             });
+                        }
+                    });
+                } else {
+                    res.status(403).jsonp({msg:'User key does not exist'});
+                    return 2;
+                }
+            });
+        } 
+    } catch (err) {
+        res.status(400).json({msg:err});
+    }
+});
+
+let usePts = [
+    check('user').exists(),
+    check('value').exists(),
+    midWare.checkToken
+];
+
+router.post('/v1/company/points/use/', usePts, (req, res, next) => {
+    try {
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp({msg:'Access forbidden'});
+            return 2;
+        } else if((typeof req.body.points != "number") || (req.body.points <= 0)){
+            res.status(400).jsonp({msg:'Value need to be an integer > 0'});
+            return 2;
+        } else {
+            validationResult(req).throw();
+            const words = req.body.user.split('.');
+            const userId = words[1];
+            const userQr = words[0];
+
+            let trData = {
+                user: userId,
+                value: req.body.points,
+                seller: null,
+                discount: null,
+                date: new Date(),
+                company: req.decoded.id,
+                nb_used: 1,
+                money_saved: 0,
+            };
+
+            /* Verify the key of the user */
+            db.query("SELECT * FROM user WHERE id = ? and qr_key = ?", [userId, userQr], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else if (rows[0]){
+                    /* Calculating the amount of points needed for the transaction */
+                    db.query("SELECT * FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows3, results3) => {
+                        if(err) {
+                            res.status(410).jsonp({msg:err});
+                            next(err);
+                        } else {
+                            let toAdd = 0;
+                            if (rows3[0]){
+                                /* If fix amount per visit, then add value, else calculate it */
+                                if(rows3[0].points_earning_type == 1){
+                                    toAdd = Math.floor(rows3[0].value);
+                                } else if(rows3[0].points_earning_type == 2) {
+                                    toAdd = Math.floor((rows3[0].value / 100) * value);
+                                }
+                                /* Creating the transaction */
+                                db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
+                                    if (err) {
+                                        res.status(410).jsonp({msg:err});
+                                        next(err);
+                                    } else {
+                                        /* Verify if the account already exists for the user in that company */
+                                        db.query("SELECT points FROM balance WHERE company = ? AND user = ?", [req.decoded.id, userId], (err, rows2, results2) => {
+                                            if(err){
+                                                res.status(410).jsonp({msg:err});
+                                                next(err);
+                                            } else {
+                                                /* if it exists : adding the points, else creating the account and adding the amount of points */
+                                                if(rows2[0]){
+                                                    let blcData = {
+                                                        points: (req.body.points + toAdd)
+                                                    };
+                                                    db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows4, results4) => {
+                                                        if(err){
+                                                            res.status(410).jsonp({msg:err});
+                                                            next(err);
+                                                        } else {
+                                                            res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"success"});
+                                                        }
+                                                    });
+                                                } else {
+                                                    let blcData = {
+                                                        user: userId,
+                                                        company: req.decoded.id,
+                                                        points: toAdd
+                                                    };
+                                                    db.query("INSERT INTO balance SET ?", blcData, (err, rows4, results4) => {
+                                                        if(err){
+                                                            res.status(410).jsonp({msg:err});
+                                                            next(err);
+                                                        } else {
+                                                            res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"success"});
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            } else {
+                                res.status(404).jsonp({msg: "No earning policy defined for this company!"})
+                            }
                         }
                     });
                 } else {
