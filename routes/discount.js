@@ -185,10 +185,8 @@ router.put('/v1/discount/:discountId', disValidate, (req, res, next) => {
                         cost: req.body.cost,
                         name: req.body.name,
                         description: req.body.description,
-                        picture_link: "",
                         product: req.body.product,
                         nb_max: req.body.nbMax,
-                        creation_date: new Date(),
                         start_date: (req.body.startDate) ? req.body.startDate : new Date,
                         expiration_date: req.body.expirationDate,
                         //per_day: (Array.isArray(perDay)) ? 1 : 0,
@@ -735,7 +733,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
                                                 const publicUrl = format(
                                                   `https://storage.googleapis.com/${bucket.name}/${blob.name}`
                                                 );
-                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.picture], (err, rows, results) => {
+                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
                                                     if (err) {
                                                         res.status(410).jsonp({msg: err});
                                                         next(err);
@@ -762,7 +760,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
                                         const publicUrl = format(
                                             `https://storage.googleapis.com/${bucket.name}/${blob.name}`
                                         );
-                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.picture], (err, rows, results) => {
+                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
                                             if (err) {
                                                 res.status(410).jsonp({msg: err});
                                                 next(err);
@@ -824,7 +822,7 @@ router.delete('/v1/discount/picture/', editPicDiscount, (req, res, next) => {
                             }
                         });
                     } else {
-                        res.status(404).jsonp({msg:'No picture to delete !'});
+                        res.status(404).jsonp({msg:'No picture to delete!'});
                     }
                 } else {
                     res.status(404).jsonp({msg:'This discount does not exist!'});
