@@ -791,7 +791,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
     }
 });
 
-router.delete('/v1/company/picture/', editPicDiscount, (req, res, next) => {
+router.delete('/v1/discount/picture/', editPicDiscount, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
