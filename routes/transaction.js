@@ -26,11 +26,11 @@ router.get('/v1/transaction/:transId', traVry, (req, res, next) => {
                                     res.status(410).jsonp({msg:err});
                                     next(err);
                                 } else {
-                                    res.status(200).jsonp({data:{ id: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userNurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date}, msg:"success"});
+                                    res.status(200).jsonp({data:{ id: rows[0].id, discountId: rows[0].discount, discountName: rows2[0].name, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userNurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date.toISOString().split("T")[0]}, msg:"success"});
                                 }
                             });
                         } else {
-                            res.status(200).jsonp({data:{ id: rows[0].id, discountId:null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date},msg:"success"});
+                            res.status(200).jsonp({data:{ id: rows[0].id, discountId:null, companyId: rows[0].companyId, companyName: rows[0].companyName, userName: rows[0].userName, userSurname: rows[0].userSurname, value: rows[0].value, date: rows[0].date.toISOString().split("T")[0]},msg:"success"});
                         }
                     } else {
                         res.status(404).jsonp({msg:"Transaction not found!"});
@@ -86,12 +86,12 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
                                 if (rws.discountName != null) {
-                                    transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, userSurname: rws.surname, value: rws.value, date: rws.date});
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, userSurname: rws.surname, value: rws.value, date: rws.date.toISOString().split("T")[0]});
                                 } else {
-                                    transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", userSurname: rws.surname, value: rws.value, date: rws.date});
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", userSurname: rws.surname, value: rws.value, date: rws.date.toISOString().split("T")[0]});
                                 }
                             } else {
-                                transact.push({id: rws.id, userSurname: rws.surname, discountId: null, value: rws.value, date: rws.date});
+                                transact.push({id: rws.id, userSurname: rws.surname, discountId: null, value: rws.value, date: rws.date.toISOString().split("T")[0]});
                             }
                         });
                         res.status(200).jsonp({data:transact, msg:"success"});
@@ -124,12 +124,12 @@ router.get('/v1/transactions', midWare.checkToken, (req, res, next) => {
                             /* Separating rewards and offers usage */
                             if(rws.discount != null){
                                 if (rws.discountName != null) {
-                                    transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: rws.discountName, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date.toISOString().split("T")[0] });
                                 } else {
-                                    transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date });
+                                    transact.push({id: rws.id, discountId: rws.discount, discountName: "deleted", companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, value: rws.value, date: rws.date.toISOString().split("T")[0] });
                                 }
                             } else {
-                                transact.push({id: rws.id, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, discountId: null, value: rws.value, date: rws.date});
+                                transact.push({id: rws.id, companyId: rws.company_id, companyName: rws.company_name, companyLogoLink: rws.companyLogoLink, discountId: null, value: rws.value, date: rws.date.toISOString().split("T")[0]});
                             }
                         });
                         res.status(200).jsonp({data:transact, msg:"success"});
