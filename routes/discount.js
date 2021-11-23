@@ -691,7 +691,7 @@ let editPicDiscount = [
     midWare.checkToken
 ];
 
-router.post(('/v1/discount/picture/'), multer.single('picture'), editPicDiscount, (req, res, next) => {
+router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -791,7 +791,7 @@ router.post(('/v1/discount/picture/'), multer.single('picture'), editPicDiscount
     }
 });
 
-router.delete(('/v1/company/picture/'), editPicDiscount, (req, res, next) => {
+router.delete('/v1/company/picture/', editPicDiscount, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){

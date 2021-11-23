@@ -185,7 +185,7 @@ Put the file in a form, with "picture" as key.
 ```
 
 
-# Delete the logo of a company
+# Delete the logo of a discount
 
 **URL** : `https://api.fidelight.fr/v1/discount/picture`
 
