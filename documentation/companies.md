@@ -539,7 +539,7 @@ If a user gets the profile, then "isFavorite" is given too to know if the user l
 ```
 
 
-# Give gift points to a user using the earning policy
+# Give points to a user using the earning policy
 
 **URL** : `https://api.fidelight.fr/v1/company/points/use/`
 
