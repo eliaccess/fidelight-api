@@ -283,7 +283,7 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
-        } else if((typeof req.body.points != "number") || (req.body.points <= 0)){
+        } else if((typeof req.body.points != "number") || (req.body.value <= 0)){
             res.status(400).jsonp({msg:'Value need to be an integer > 0'});
             return 2;
         } else {
