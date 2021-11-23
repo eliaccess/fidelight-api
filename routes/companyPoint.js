@@ -180,13 +180,13 @@ router.get('/v1/points/type', midWare.checkToken,(req, res, next) => {
 });
 
 
-let usePts = [
+let giftPts = [
     check('user').exists(),
     check('points').exists(),
     midWare.checkToken
 ];
 
-router.post('/v1/company/points/gift/', usePts, (req, res, next) => {
+router.post('/v1/company/points/gift/', giftPts, (req, res, next) => {
     try {
         if(req.decoded.type != 'company'){
             res.status(403).jsonp({msg:'Access forbidden'});
