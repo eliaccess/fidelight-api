@@ -6,6 +6,7 @@ const { check, validationResult } = require('express-validator');
 const con = require('../modules/dbConnect');
 const path = require('path');
 const {format} = require('util');
+const fs = require('fs');
 const {Storage} = require('@google-cloud/storage');
 
 // Instantiate a storage client
@@ -265,6 +266,7 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                 if (rows[0]){
                     var offers=[];
                     var rewards=[];
+                    const bucketName = "fidelight-api";
                     rows.forEach(company => {
                         if (company.creationDate != null){
                             company.creationDate = company.creationDate.toISOString().split("T")[0];
@@ -277,6 +279,19 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                         if (company.expirationDate != null){
                             company.expirationDate = company.expirationDate.toISOString().split("T")[0];
                         }
+
+                        // The public URL can be used to directly access the file via HTTP.
+                        var publicUrlPicture = null;
+
+                        if(rows[0].picture_link == null){
+                            publicUrlLogo = null
+                        } else {
+                            publicUrlLogo = format(
+                                `https://storage.googleapis.com/${bucketName}/${rows[0].pictureLink}`
+                            );
+                        }
+
+                        company.pictureLink = publicUrlPicture;
 
                         if (company.monday == null) { company.monday = 0; }
                         if (company.tuesday == null) { company.tuesday = 0; }
@@ -330,11 +345,22 @@ router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
                 next(err);
             } else {
                 if (rows[0]){
+                    // The public URL can be used to directly access the file via HTTP.
+                    var publicUrlPicture = null;
+                    const bucketName = "fidelight-api";
+                    if(rows[0].picture_link == null){
+                        publicUrlLogo = null
+                    } else {
+                        publicUrlLogo = format(
+                            `https://storage.googleapis.com/${bucketName}/${rows[0].pictureLink}`
+                        );
+                    }
+
                     let creationDate = rows[0].creationDate ? rows[0].creationDate.toISOString().split("T")[0] : null;
                     let startDate = rows[0].startDate ? rows[0].startDate.toISOString().split("T")[0] : null;
                     let expirationDate = rows[0].expirationDate ? rows[0].expirationDate.toISOString().split("T")[0] : null;
 
-                    res.status(200).jsonp({data:{id: req.params.discountId, company: rows[0].company, discountType: rows[0].discountType, timesUsed: rows[0].timesUsed, cost: rows[0].cost, name: rows[0].name, description: rows[0].description, pictureLink: rows[0].pictureLink, product: rows[0].product, nbMax: rows[0].nbMax, creationDate: creationDate, startDate: startDate, expirationDate: expirationDate, perDay: {monday: rows[0].monday, tuesday: rows[0].tuesday, wednesday: rows[0].wednesday, thursday: rows[0].thursday, friday: rows[0].friday, saturday: rows[0].saturday, sunday: rows[0].sunday}, value: rows[0].value}, msg:"success"});
+                    res.status(200).jsonp({data:{id: req.params.discountId, company: rows[0].company, discountType: rows[0].discountType, timesUsed: rows[0].timesUsed, cost: rows[0].cost, name: rows[0].name, description: rows[0].description, pictureLink: publicUrlPicture, product: rows[0].product, nbMax: rows[0].nbMax, creationDate: creationDate, startDate: startDate, expirationDate: expirationDate, perDay: {monday: rows[0].monday, tuesday: rows[0].tuesday, wednesday: rows[0].wednesday, thursday: rows[0].thursday, friday: rows[0].friday, saturday: rows[0].saturday, sunday: rows[0].sunday}, value: rows[0].value}, msg:"success"});
                 } else {
                     res.status(404).jsonp({msg:"Discount not found."});
                 }
