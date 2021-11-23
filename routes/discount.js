@@ -707,7 +707,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
                     } else if (rows[0]){
                         const date_day = new Date();
                         /* checking if the discount exists and is active */
-                        db.query("SELECT * FROM discount WHERE (id = ?) AND (company = ?) AND (expiration_date IS NULL OR expiration_date > ?) AND (start_date <= ?) AND (active = 1)", [req.body.picture, req.decoded.id, date_day, date_day], (err, rows, results) => {
+                        db.query("SELECT * FROM discount WHERE (id = ?) AND (company = ?) AND (expiration_date IS NULL OR expiration_date > ?) AND (start_date <= ?) AND (active = 1)", [req.body.discount, req.decoded.id, date_day, date_day], (err, rows, results) => {
                             if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
