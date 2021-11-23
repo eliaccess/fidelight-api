@@ -160,6 +160,157 @@ router.post('/v1/discount', disValidate, (req, res, next) => {
     });
 */
 
+let editPicDiscount = [
+    check('discount').exists(),
+    midWare.checkToken
+];
+
+router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp({msg:'Access forbidden'});
+            return 2;
+        } else {
+            if(req.file){
+                /* checking if the company exists */
+                db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                    if (err) {
+                        res.status(410).jsonp({msg:err});
+                        next(err);
+                    } else if (rows[0]){
+                        const date_day = new Date();
+                        /* checking if the discount exists and is active */
+                        db.query("SELECT * FROM discount WHERE (id = ?) AND (company = ?) AND (expiration_date IS NULL OR expiration_date > ?) AND (start_date <= ?) AND (active = 1)", [req.body.discount, req.decoded.id, date_day, date_day], (err, rows, results) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else if (rows[0]){
+                                /* if a logo already exists, then we replace it, else we just create one */
+                                if(rows[0].picture_link){
+                                    var discountName = rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase();
+                                    var discountId = rows[0].id+5;
+                                    fs.unlink(rows[0].picture_link, function(err, rows){
+                                        if(err && err.code !== "ENOENT"){
+                                            res.status(410).jsonp({msg:err});
+                                            next(err);
+                                        } else {
+                                            // Create a new blob in the bucket and upload the file data.
+                                            var pathVariable = "discount/" + discountName + discountId + '_picture' + path.extname(req.file.originalname);
+                                            const blob = bucket.file(pathVariable);
+                                            const blobStream = blob.createWriteStream();
+                                            // If error then we next
+                                            blobStream.on('error', err => {
+                                                next(err);
+                                            });
+
+                                            blobStream.on('finish', () => {
+                                                // The public URL can be used to directly access the file via HTTP.
+                                                const publicUrl = format(
+                                                  `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                                );
+                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
+                                                    if (err) {
+                                                        res.status(410).jsonp({msg: err});
+                                                        next(err);
+                                                    } else {
+                                                        res.status(200).jsonp({msg:"Picture added successfully!", data: {pictureUrl: publicUrl}});
+                                                    }
+                                                });
+                                            });
+                                            blobStream.end(req.file.buffer);
+                                        }
+                                    });
+                                } else {
+                                    // Create a new blob in the bucket and upload the file data.
+                                    var discountId = rows[0].id+5;
+                                    const blob = bucket.file("discount/" + rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase() + discountId + '_picture' + path.extname(req.file.originalname));
+                                    const blobStream = blob.createWriteStream();
+                                    // If error then we next
+                                    blobStream.on('error', err => {
+                                        next(err);
+                                    });
+
+                                    blobStream.on('finish', () => {
+                                        // The public URL can be used to directly access the file via HTTP.
+                                        const publicUrl = format(
+                                            `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                        );
+                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
+                                            if (err) {
+                                                res.status(410).jsonp({msg: err});
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({msg:"Picture added successfully!", data: {pictureUrl: publicUrl}});
+                                            }
+                                        });
+                                    });
+                                    blobStream.end(req.file.buffer);
+                                }
+                            } else {
+                                res.status(404).jsonp({msg:'This discount does not exist, or is not active anymore!'});
+                            }
+                        });
+                    } else {
+                        res.status(404).jsonp({msg:'Company does not exist!'});
+                    }
+                });
+            } else {
+                res.status(400).jsonp({msg:'The file needs to be PNG, JPEG or JPG'});
+            }
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json(err);
+    }
+});
+
+router.delete('/v1/discount/picture/', editPicDiscount, (req, res, next) => {
+    try {
+        validationResult(req).throw();
+        if(req.decoded.type != 'company'){
+            res.status(403).jsonp({msg:'Access forbidden'});
+            return 2;
+        } else {
+            db.query("SELECT * FROM discount WHERE id = ? and company = ?", [req.body.discount, req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else if (rows[0]){
+                    bucketName = "fidelight-api";
+                    fileName = rows[0].picture_link;
+                    /* if a logo already exists, then we replace it, else we just create one */
+                    if(rows[0].picture_link){
+                        async function deleteFile() {
+                            await storage.bucket(bucketName).file(fileName).delete();
+                        
+                            console.log(`gs://${bucketName}/${fileName} deleted`);
+                        }
+
+                        deleteFile().catch(console.error);
+
+                        db.query("UPDATE discount SET picture_link = null WHERE id = ?", [req.body.discount], (err, rows, results) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                res.status(200).jsonp({msg:'Picture deleted successfully!'});
+                            }
+                        });
+                    } else {
+                        res.status(404).jsonp({msg:'No picture to delete!'});
+                    }
+                } else {
+                    res.status(404).jsonp({msg:'This discount does not exist!'});
+                }
+            });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({msg:err});
+    }
+});
+
 router.put('/v1/discount/:discountId', disValidate, (req, res, next) => {
     try {
         validationResult(req).throw();
@@ -283,10 +434,10 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                         // The public URL can be used to directly access the file via HTTP.
                         var publicUrlPicture = null;
 
-                        if(rows[0].picture_link == null){
-                            publicUrlLogo = null
+                        if((company.pictureLink == null) || (company.pictureLink == "")){
+                            publicUrlPicture = null
                         } else {
-                            publicUrlLogo = format(
+                            publicUrlPicture = format(
                                 `https://storage.googleapis.com/${bucketName}/${rows[0].pictureLink}`
                             );
                         }
@@ -348,10 +499,10 @@ router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
                     // The public URL can be used to directly access the file via HTTP.
                     var publicUrlPicture = null;
                     const bucketName = "fidelight-api";
-                    if(rows[0].picture_link == null){
-                        publicUrlLogo = null
+                    if(rows[0].pictureLink == null){
+                        publicUrlPicture = null
                     } else {
-                        publicUrlLogo = format(
+                        publicUrlPicture = format(
                             `https://storage.googleapis.com/${bucketName}/${rows[0].pictureLink}`
                         );
                     }
@@ -709,157 +860,6 @@ function getTopSixFromOffers(data){
 
     return indexes;
 }
-
-let editPicDiscount = [
-    check('discount').exists(),
-    midWare.checkToken
-];
-
-router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        if(req.decoded.type != 'company'){
-            res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
-        } else {
-            if(req.file){
-                /* checking if the company exists */
-                db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-                    if (err) {
-                        res.status(410).jsonp({msg:err});
-                        next(err);
-                    } else if (rows[0]){
-                        const date_day = new Date();
-                        /* checking if the discount exists and is active */
-                        db.query("SELECT * FROM discount WHERE (id = ?) AND (company = ?) AND (expiration_date IS NULL OR expiration_date > ?) AND (start_date <= ?) AND (active = 1)", [req.body.discount, req.decoded.id, date_day, date_day], (err, rows, results) => {
-                            if (err) {
-                                res.status(410).jsonp({msg:err});
-                                next(err);
-                            } else if (rows[0]){
-                                /* if a logo already exists, then we replace it, else we just create one */
-                                if(rows[0].picture_link){
-                                    var discountName = rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase();
-                                    var discountId = rows[0].id+5;
-                                    fs.unlink(rows[0].picture_link, function(err, rows){
-                                        if(err && err.code !== "ENOENT"){
-                                            res.status(410).jsonp({msg:err});
-                                            next(err);
-                                        } else {
-                                            // Create a new blob in the bucket and upload the file data.
-                                            var pathVariable = "discount/" + discountName + discountId + '_picture' + path.extname(req.file.originalname);
-                                            const blob = bucket.file(pathVariable);
-                                            const blobStream = blob.createWriteStream();
-                                            // If error then we next
-                                            blobStream.on('error', err => {
-                                                next(err);
-                                            });
-
-                                            blobStream.on('finish', () => {
-                                                // The public URL can be used to directly access the file via HTTP.
-                                                const publicUrl = format(
-                                                  `https://storage.googleapis.com/${bucket.name}/${blob.name}`
-                                                );
-                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
-                                                    if (err) {
-                                                        res.status(410).jsonp({msg: err});
-                                                        next(err);
-                                                    } else {
-                                                        res.status(200).jsonp({msg:"Picture added successfully!", data: {pictureUrl: publicUrl}});
-                                                    }
-                                                });
-                                            });
-                                            blobStream.end(req.file.buffer);
-                                        }
-                                    });
-                                } else {
-                                    // Create a new blob in the bucket and upload the file data.
-                                    var discountId = rows[0].id+5;
-                                    const blob = bucket.file("discount/" + rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase() + discountId + '_picture' + path.extname(req.file.originalname));
-                                    const blobStream = blob.createWriteStream();
-                                    // If error then we next
-                                    blobStream.on('error', err => {
-                                        next(err);
-                                    });
-
-                                    blobStream.on('finish', () => {
-                                        // The public URL can be used to directly access the file via HTTP.
-                                        const publicUrl = format(
-                                            `https://storage.googleapis.com/${bucket.name}/${blob.name}`
-                                        );
-                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
-                                            if (err) {
-                                                res.status(410).jsonp({msg: err});
-                                                next(err);
-                                            } else {
-                                                res.status(200).jsonp({msg:"Picture added successfully!", data: {pictureUrl: publicUrl}});
-                                            }
-                                        });
-                                    });
-                                    blobStream.end(req.file.buffer);
-                                }
-                            } else {
-                                res.status(404).jsonp({msg:'This discount does not exist, or is not active anymore!'});
-                            }
-                        });
-                    } else {
-                        res.status(404).jsonp({msg:'Company does not exist!'});
-                    }
-                });
-            } else {
-                res.status(400).jsonp({msg:'The file needs to be PNG, JPEG or JPG'});
-            }
-        }
-    } catch (err) {
-        console.log(err);
-        res.status(400).json(err);
-    }
-});
-
-router.delete('/v1/discount/picture/', editPicDiscount, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        if(req.decoded.type != 'company'){
-            res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
-        } else {
-            db.query("SELECT * FROM discount WHERE id = ? and company = ?", [req.body.discount, req.decoded.id], (err, rows, results) => {
-                if (err) {
-                    res.status(410).jsonp({msg:err});
-                    next(err);
-                } else if (rows[0]){
-                    bucketName = "fidelight-api";
-                    fileName = rows[0].picture_link;
-                    /* if a logo already exists, then we replace it, else we just create one */
-                    if(rows[0].picture_link){
-                        async function deleteFile() {
-                            await storage.bucket(bucketName).file(fileName).delete();
-                        
-                            console.log(`gs://${bucketName}/${fileName} deleted`);
-                        }
-
-                        deleteFile().catch(console.error);
-
-                        db.query("UPDATE discount SET picture_link = null WHERE id = ?", [req.body.discount], (err, rows, results) => {
-                            if (err) {
-                                res.status(410).jsonp({msg:err});
-                                next(err);
-                            } else {
-                                res.status(200).jsonp({msg:'Picture deleted successfully!'});
-                            }
-                        });
-                    } else {
-                        res.status(404).jsonp({msg:'No picture to delete!'});
-                    }
-                } else {
-                    res.status(404).jsonp({msg:'This discount does not exist!'});
-                }
-            });
-        }
-    } catch (err) {
-        console.log(err);
-        res.status(400).json({msg:err});
-    }
-});
 
 router.get('/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) => {
     try {
