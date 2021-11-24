@@ -294,7 +294,7 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
 
             let trData = {
                 user: userId,
-                value: req.body.points,
+                value: null,
                 seller: null,
                 discount: null,
                 date: new Date(),
@@ -321,8 +321,10 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
                                 if(rows3[0].points_earning_type == 1){
                                     toAdd = Math.floor(rows3[0].value);
                                 } else if(rows3[0].points_earning_type == 2) {
-                                    toAdd = Math.floor((rows3[0].value / 100) * value);
+                                    toAdd = Math.floor((rows3[0].value / 100) * req.body.value);
                                 }
+
+                                trData.value = toAdd;
                                 /* Creating the transaction */
                                 db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
                                     if (err) {
@@ -338,7 +340,7 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
                                                 /* if it exists : adding the points, else creating the account and adding the amount of points */
                                                 if(rows2[0]){
                                                     let blcData = {
-                                                        points: (req.body.points + toAdd)
+                                                        points: (rows2[0].points + toAdd)
                                                     };
                                                     db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows4, results4) => {
                                                         if(err){

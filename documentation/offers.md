@@ -342,9 +342,9 @@ Put the file in a form, with "picture" as key.
 
 # Use an offer on a user
 
-**URL** : `https://api.fidelight.fr/v1/discount/use/$user.id`
+**URL** : `https://api.fidelight.fr/v1/discount/use/`
 
-**Method** : `GET`
+**Method** : `POST`
 
 **Auth required** : YES
 
