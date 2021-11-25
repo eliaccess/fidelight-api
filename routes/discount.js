@@ -161,11 +161,10 @@ router.post('/v1/discount', disValidate, (req, res, next) => {
 */
 
 let editPicDiscount = [
-    check('discount').exists(),
     midWare.checkToken
 ];
 
-router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, (req, res, next) => {
+router.post('/v1/discount/picture/:discountId', multer.single('picture'), editPicDiscount, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
@@ -181,7 +180,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
                     } else if (rows[0]){
                         const date_day = new Date();
                         /* checking if the discount exists and is active */
-                        db.query("SELECT * FROM discount WHERE (id = ?) AND (company = ?) AND (expiration_date IS NULL OR expiration_date > ?) AND (start_date <= ?) AND (active = 1)", [req.body.discount, req.decoded.id, date_day, date_day], (err, rows, results) => {
+                        db.query("SELECT * FROM discount WHERE (id = ?) AND (company = ?) AND (expiration_date IS NULL OR expiration_date > ?) AND (start_date <= ?) AND (active = 1)", [req.params.discountId, req.decoded.id, date_day, date_day], (err, rows, results) => {
                             if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -209,7 +208,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
                                                 const publicUrl = format(
                                                   `https://storage.googleapis.com/${bucket.name}/${blob.name}`
                                                 );
-                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
+                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.params.discountId], (err, rows, results) => {
                                                     if (err) {
                                                         res.status(410).jsonp({msg: err});
                                                         next(err);
@@ -236,7 +235,7 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
                                         const publicUrl = format(
                                             `https://storage.googleapis.com/${bucket.name}/${blob.name}`
                                         );
-                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.body.discount], (err, rows, results) => {
+                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.params.discountId], (err, rows, results) => {
                                             if (err) {
                                                 res.status(410).jsonp({msg: err});
                                                 next(err);
@@ -265,14 +264,14 @@ router.post('/v1/discount/picture/', multer.single('picture'), editPicDiscount, 
     }
 });
 
-router.delete('/v1/discount/picture/', editPicDiscount, (req, res, next) => {
+router.delete('/v1/discount/picture/:discountId', editPicDiscount, (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
-            db.query("SELECT * FROM discount WHERE id = ? and company = ?", [req.body.discount, req.decoded.id], (err, rows, results) => {
+            db.query("SELECT * FROM discount WHERE id = ? and company = ?", [req.params.discountId, req.decoded.id], (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -289,7 +288,7 @@ router.delete('/v1/discount/picture/', editPicDiscount, (req, res, next) => {
 
                         deleteFile().catch(console.error);
 
-                        db.query("UPDATE discount SET picture_link = null WHERE id = ?", [req.body.discount], (err, rows, results) => {
+                        db.query("UPDATE discount SET picture_link = null WHERE id = ?", [req.params.discountId], (err, rows, results) => {
                             if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
