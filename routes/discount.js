@@ -437,7 +437,7 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                             publicUrlPicture = null
                         } else {
                             publicUrlPicture = format(
-                                `https://storage.googleapis.com/${bucketName}/${rows[0].pictureLink}`
+                                `https://storage.googleapis.com/${bucketName}/${company.pictureLink}`
                             );
                         }
 
@@ -498,7 +498,7 @@ router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
                     // The public URL can be used to directly access the file via HTTP.
                     var publicUrlPicture = null;
                     const bucketName = "fidelight-api";
-                    if(rows[0].pictureLink == null){
+                    if((rows[0].pictureLink == null) || (rows[0].pictureLink == "")){
                         publicUrlPicture = null
                     } else {
                         publicUrlPicture = format(
