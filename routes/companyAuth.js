@@ -107,7 +107,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                     
                                     dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
-                                            let emailToken = await getEmailToken(insertedId, 'company');
+                                            let emailToken = getEmailToken(insertedId, 'company');
                                             let linkConf = "https://api.fidelight.fr/v1/company/verify/" + emailToken
                                             let content = await emailFunctions.generateConfirmationEmailCompany(regData.name, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(regData.email, content);
