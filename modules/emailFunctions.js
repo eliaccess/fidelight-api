@@ -41,7 +41,209 @@ async function generateConfirmationEmailCompany(company, confirmationURL){
 		        <link rel='stylesheet' href='https://storage.googleapis.com/fidelight-api/email/style/bootstrap.css'>
 		        <link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
 		        <link rel='stylesheet' href='https://storage.googleapis.com/fidelight-api/email/style/styles.css'>
-		  
+				<style>
+					body {
+						width:100%;
+						align-content: center;
+						justify-content: center;
+						background: #E5E5E5;
+						display: flex;
+					}
+					a{
+						text-decoration: none;
+					}
+					.separator{
+						width: 30%;
+					}
+					.social_img{
+						width: 24px;
+					}
+					.logo_image{
+						width: 30px;
+					}
+					.brand_name_image{
+						width: 100px;
+					}
+					.separatorDiv{
+						display: flex; 
+						width:100%;
+						align-content: center;
+						justify-content: center;
+						position:relative;
+						margin-top: 20px;
+						margin-bottom: 20px;
+					}
+					.content {
+						display: flex; 
+						width:100%;
+						flex-wrap:wrap;
+						flex-direction: column;
+						max-width:580px;
+						min-width:400px;
+						align-content: center;
+						justify-content: center;
+						position:relative;
+					}
+					.header {
+						display:flex;
+						flex-wrap:wrap;
+						flex-direction:column;
+						justify-content: center;
+						align-content: center;
+						width:100%;
+						position:relative;
+					}
+					.title { 
+						display:flex;
+						justify-content: center;
+						color:rgba(0, 0, 0, 1);
+						width:100%;
+						position:relative;
+						font-family:Inter;
+						text-align:center;
+						font-size:24px;
+						letter-spacing:0;
+					}
+					.logo {
+						display: flex;
+						justify-content:center;
+						width:100%;
+						margin-top: 20px;
+						position:relative;
+					}
+					.thank_you_message { 
+						display: flex;
+						color:rgba(50, 50, 50, 1);
+						width:100%;
+						position:relative;
+						font-family:Inter;
+						text-align:center;
+						margin-bottom:10px;
+						font-size:16px;
+						letter-spacing:0;
+					}
+					.box_mail { 
+						display: flex;
+						flex-wrap: wrap;
+						flex-direction: column;
+						background-color:rgba(255, 255, 255, 1);
+						width:100%;
+						position:relative;
+						align-content:center;
+						justify-content:center;
+						padding:20px;
+						margin-top:30px;
+						border-top-left-radius:10px;
+						border-top-right-radius:10px;
+						border-bottom-left-radius:10px;
+						border-bottom-right-radius:10px;
+					}
+					.confirmation_link {
+						display: flex; 
+						color:rgba(35, 50, 250, 1);
+						width:100%;
+						text-align: center;
+						justify-content: center;
+						position:relative;
+						font-family:Inter;
+						text-align:center;
+						font-size:24px;
+						letter-spacing:0;
+					}
+					.get_app_msg { 
+						display: flex;
+						color:rgba(0, 0, 0, 1);
+						width:100%;
+						justify-content:center;
+						position:relative;
+						font-family:Inter;
+						text-align:center;
+						font-size:24px;
+						letter-spacing:0;
+						margin-bottom: 10px;
+					}
+					.get_app_detail { 
+						display: flex; 
+						color:rgba(100, 100, 100, 1);
+						width:100%;
+						justify-content: center;
+						position:relative;
+						font-family:Inter;
+						text-align:center;
+						font-size:16px;
+						letter-spacing:0;
+						margin-bottom: 15px;
+					}
+					.download { 
+						display: flex;
+						width:100%;
+						position:relative;
+						flex-wrap: wrap;
+						flex-direction: row;
+						align-content: center;
+						justify-content: center;
+						margin-bottom: 15px;
+					}
+					.download_left { 
+						display: flex;
+						justify-content: right;
+						width:50%;
+						height: 55px;
+						padding-right:10px;
+						position:relative;
+					}
+					.download_right { 
+						display: flex;
+						justify-content: left;
+						width:50%;
+						height: 55px;
+						padding-left:10px;
+						position:relative;
+					}
+					.download_logo { 
+						display: flex;
+						justify-content: center;
+						height: 55px;
+						margin-right:10px;
+						margin-left:10px;
+						position:relative;
+					}
+					.social_links {
+						display: flex;
+						flex-wrap: wrap;
+						justify-content: center;
+						flex-direction: row;
+						width:100%;
+						min-width:120px;
+						position:relative;
+					}
+					.social_logo { 
+						width:24px;
+						height:24px;
+						margin-left: 12px;
+						margin-right: 12px; 
+						position:relative;
+					}
+					.brand_name { 
+						display: flex;
+						justify-content: center;
+						margin-top: 15px;
+						margin-bottom: 20px;
+						width:100%;
+						position:relative;
+					}
+					.footer { 
+						display: flex;
+						justify-content: center;
+						color:rgba(150, 150, 150, 1);
+						width:100%;
+						position:relative;
+						font-family:Inter;
+						text-align:center;
+						font-size:12px;
+						letter-spacing:0;
+					}
+				</style>
 		    </head>
 		  
 		    <body>

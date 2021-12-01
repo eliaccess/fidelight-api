@@ -140,35 +140,12 @@ router.get('/v1/company/schedule/:companyId', midWare.checkToken, (req, res, nex
                             7: 'Sunday'
                         }
                         counter = 0;
-                        result = [];
-                        daysDone = [];
                         rows2.forEach(element => {
                             rows2[counter].dayName = days[element.day];
-                            toAdd = []
-                            if(element.openPm == null || element.closeAm == null){
-                                toAdd.push({startTime: element.openAm, endTime: element.closePm});
-                            } else {
-                                toAdd.push({startTime: element.openAm, endTime: element.closeAm});
-                                toAdd.push({startTime: element.openPm, endTime: element.closePm});
-                            }
-
-                            daysDone.push(element.days);
-
-                            result.id = element.day
-                            result.dayName = days[element.day];
-                            result.timings = toAdd;
                             counter++;
                         });
 
-                        for (let day = 1; day <=7; day++) {
-                            if (!([1, 2, 3, 4, 5, 6, 7].includes(day))) {
-                                result.id = day
-                                result.dayName = days[day];
-                                result.timings = [];
-                            }
-                        }
-
-                        res.status(200).jsonp({data: result, msg: "success"})
+                        res.status(200).jsonp({data: rows2, msg: "success"});
                     } else {
                         res.status(404).jsonp({msg: "No schedule registered for this company location!"})
                     }
