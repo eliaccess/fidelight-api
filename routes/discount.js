@@ -189,37 +189,42 @@ router.post('/v1/discount/picture/:discountId', multer.single('picture'), editPi
                                 if(rows[0].picture_link){
                                     var discountName = rows[0].name.replace(/[^a-zA-Z]/g,"").toLowerCase();
                                     var discountId = rows[0].id+5;
-                                    fs.unlink(rows[0].picture_link, function(err, rows){
-                                        if(err && err.code !== "ENOENT"){
-                                            res.status(410).jsonp({msg:err});
-                                            next(err);
-                                        } else {
-                                            // Create a new blob in the bucket and upload the file data.
-                                            var pathVariable = "discount/" + discountName + discountId + '_picture' + path.extname(req.file.originalname);
-                                            const blob = bucket.file(pathVariable);
-                                            const blobStream = blob.createWriteStream();
-                                            // If error then we next
-                                            blobStream.on('error', err => {
-                                                next(err);
-                                            });
 
-                                            blobStream.on('finish', () => {
-                                                // The public URL can be used to directly access the file via HTTP.
-                                                const publicUrl = format(
-                                                  `https://storage.googleapis.com/${bucket.name}/${blob.name}`
-                                                );
-                                                db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.params.discountId], (err, rows, results) => {
-                                                    if (err) {
-                                                        res.status(410).jsonp({msg: err});
-                                                        next(err);
-                                                    } else {
-                                                        res.status(200).jsonp({msg:"Picture added successfully!", data: {pictureUrl: publicUrl}});
-                                                    }
-                                                });
-                                            });
-                                            blobStream.end(req.file.buffer);
-                                        }
+                                    bucketName = "fidelight-api";
+                                    fileName = rows[0].picture_link;
+
+                                    async function deleteFile() {
+                                        await storage.bucket(bucketName).file(fileName).delete();
+                                    
+                                        console.log(`gs://${bucketName}/${fileName} deleted`);
+                                    }
+
+                                    deleteFile().catch(console.error);
+
+                                    // Create a new blob in the bucket and upload the file data.
+                                    var pathVariable = "discount/" + discountName + discountId + '_picture' + path.extname(req.file.originalname);
+                                    const blob = bucket.file(pathVariable);
+                                    const blobStream = blob.createWriteStream();
+                                    // If error then we next
+                                    blobStream.on('error', err => {
+                                        next(err);
                                     });
+
+                                    blobStream.on('finish', () => {
+                                        // The public URL can be used to directly access the file via HTTP.
+                                        const publicUrl = format(
+                                          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+                                        );
+                                        db.query("UPDATE discount SET picture_link = ? WHERE id = ?", [blob.name, req.params.discountId], (err, rows, results) => {
+                                            if (err) {
+                                                res.status(410).jsonp({msg: err});
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({msg:"Picture added successfully!", data: {pictureUrl: publicUrl}});
+                                            }
+                                        });
+                                    });
+                                    blobStream.end(req.file.buffer);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
                                     var discountId = rows[0].id+5;
@@ -417,6 +422,8 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                     var offers=[];
                     var rewards=[];
                     const bucketName = "fidelight-api";
+                    const defaultOfferPictureLink = "default/offer.png";
+                    const defaultRewardPictureLink = "default/reward.png";
                     rows.forEach(company => {
                         if (company.creationDate != null){
                             company.creationDate = company.creationDate.toISOString().split("T")[0];
@@ -434,7 +441,16 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                         var publicUrlPicture = null;
 
                         if((company.pictureLink == null) || (company.pictureLink == "")){
-                            publicUrlPicture = null
+                            // Putting the default image link
+                            if(company.cost == 0 || company.cost == null){
+                                publicUrlPicture = format(
+                                    `https://storage.googleapis.com/${bucketName}/${defaultOfferPictureLink}`
+                                );
+                            } else {
+                                publicUrlPicture = format(
+                                    `https://storage.googleapis.com/${bucketName}/${defaultRewardPictureLink}`
+                                );
+                            }
                         } else {
                             publicUrlPicture = format(
                                 `https://storage.googleapis.com/${bucketName}/${company.pictureLink}`
@@ -498,8 +514,19 @@ router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
                     // The public URL can be used to directly access the file via HTTP.
                     var publicUrlPicture = null;
                     const bucketName = "fidelight-api";
+                    const defaultOfferPictureLink = "default/offer.png";
+                    const defaultRewardPictureLink = "default/reward.png";
                     if((rows[0].pictureLink == null) || (rows[0].pictureLink == "")){
-                        publicUrlPicture = null
+                        // Putting the default image link
+                        if(rows[0].cost == 0 || rows[0].cost == null){
+                            publicUrlPicture = format(
+                                `https://storage.googleapis.com/${bucketName}/${defaultOfferPictureLink}`
+                            );
+                        } else {
+                            publicUrlPicture = format(
+                                `https://storage.googleapis.com/${bucketName}/${defaultRewardPictureLink}`
+                            );
+                        }
                     } else {
                         publicUrlPicture = format(
                             `https://storage.googleapis.com/${bucketName}/${rows[0].pictureLink}`
