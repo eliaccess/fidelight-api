@@ -2,7 +2,7 @@
 
 Please use HTTPS to communicate with the API.
 
-The domain name `api.fidelight.fr` is redirecting (status 302) on `fidelightapp-314712.ew.r.appspot.com`. If you have issues using the first one you can use the second.
+The domain name used is `api.fidelight.fr`.
 
 These functions are not supported yet :
 - Connect with facebook
