@@ -124,7 +124,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                             next(err);
                                         } else {
                                             let emailToken = getEmailToken(insertedId, 'company');
-                                            let linkConf = "https://api.fidelight.fr/company/verify/" + emailToken
+                                            let linkConf = "https://api.fidelight.fr/v1/company/verify/" + emailToken
                                             let content = await emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
                                             
