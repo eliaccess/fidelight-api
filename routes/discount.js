@@ -422,8 +422,8 @@ router.get('/v1/discount/company/:companyId', midWare.checkToken, (req, res, nex
                     var offers=[];
                     var rewards=[];
                     const bucketName = "fidelight-api";
-                    const defaultOfferPictureLink = "default/offer.png";
-                    const defaultRewardPictureLink = "default/reward.png";
+                    const defaultOfferPictureLink = "discount/default/offer.png";
+                    const defaultRewardPictureLink = "discount/default/reward.png";
                     rows.forEach(company => {
                         if (company.creationDate != null){
                             company.creationDate = company.creationDate.toISOString().split("T")[0];
@@ -514,8 +514,8 @@ router.get('/v1/discount/:discountId', midWare.checkToken, (req, res, next) => {
                     // The public URL can be used to directly access the file via HTTP.
                     var publicUrlPicture = null;
                     const bucketName = "fidelight-api";
-                    const defaultOfferPictureLink = "default/offer.png";
-                    const defaultRewardPictureLink = "default/reward.png";
+                    const defaultOfferPictureLink = "discount/default/offer.png";
+                    const defaultRewardPictureLink = "discount/default/reward.png";
                     if((rows[0].pictureLink == null) || (rows[0].pictureLink == "")){
                         // Putting the default image link
                         if(rows[0].cost == 0 || rows[0].cost == null){
