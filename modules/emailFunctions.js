@@ -150,7 +150,7 @@ async function generateConfirmationEmailCompany(company, confirmationURL){
 														<tr>
 															<td style="width: 20px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="20">&nbsp;</td>
 															<td style="-webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-																<table class="full_width" cellspacing="0" cellpadding="0" border="0" width="560" bgcolor="#fff" style="width: 560px; background: #fff; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; border-collapse:collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+																<table class="full_width" cellspacing="0" cellpadding="0" border="0" width="560" bgcolor="#fff" style="width: 560px; background: #fff; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; border-collapse:collapse; border-radius:10px; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
 																	<tr>
 																		<td colspan="3" style="height: 20px; mso-line-height-rule:exactly; line-height: 1px; font-size: 0px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt;" height="20">&nbsp;</td>
 																	</tr>
@@ -281,6 +281,11 @@ async function generateConfirmationEmailCompany(company, confirmationURL){
 																</table>
 															</td>
 															<td style="width: 20px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="20">&nbsp;</td>
+														</tr>
+													</table>
+													<table class="full_width" cellspacing="0" cellpadding="0" border="0" width="600" bgcolor="#e5e5e5" align="center" style="margin: 0 auto; width: 600px; background: #e5e5e5; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; border-collapse:collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+														<tr>
+															<td style="height: 20px; line-height: 1px; font-size: 0px; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt;" height="20"></td>
 														</tr>
 													</table>
 												</td>
