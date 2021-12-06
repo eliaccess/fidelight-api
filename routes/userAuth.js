@@ -50,7 +50,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
             registration_date: new Date(),
             qr_key: qrCode,
             verified: 0,
-            active: 1
+            active: 2
         };
 
         //Verifying that the user doesn't exist in table then inserting the data
@@ -279,7 +279,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                             registration_date: new Date(),
                             qr_key: qrCode,
                             verified: 0,
-                            active: 1
+                            active: 2
                         };
                         
                         db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
@@ -406,7 +406,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                             registration_date: new Date(),
                             qr_key: qrCode,
                             verified: 0,
-                            active: 1
+                            active: 2
                         };
                         
                         db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {

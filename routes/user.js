@@ -1,10 +1,9 @@
 const express = require('express');
 const {format} = require('util');
-//const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const db = require('../modules/dbConnect');
-//const config = require('../modules/secret');
+const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const midWare = require('../modules/middleware');
 
@@ -282,6 +281,52 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
                 res.status(404).jsonp({msg:"No company liked yet!"});
             }
         });
+    } catch (err) {
+        res.status(400).json({msg:err});
+    }
+});
+
+router.get('/v1/user/verify/:token', (req, res, next) => {
+    try {
+        const decodedToken = jwt.verify(req.params.token, process.env.EMAIL_TOKEN_SECRET);
+
+        if(decodedToken.type == 'user' && decodedToken.id){
+            db.query("SELECT verified, active FROM user WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else if(rows[0]){
+                    // route for new accounts
+                    if((rows[0].verified != 1) && (rows[0].active == 2)){
+                        db.query("UPDATE user SET verified = 1, active = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                res.status(200).jsonp({msg:'Your account has been verified !'});
+                            }
+                        });
+                    // route for active / banned accounts
+                    } else if (rows[0].verified != 1){
+                        db.query("UPDATE user SET verified = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                res.status(200).jsonp({msg:'Your account has been verified !'});
+                            }
+                        });
+                    // route for verified accounts
+                    } else {
+                        res.status(403).json({msg:'Your account has already been verified.'});
+                    }
+                } else {
+                    res.status(404).json({msg:'An issue occured finding your account. Please contact the support.'});
+                }
+            });
+        } else {
+            res.status(401).json({msg:'Please provide a valide token.'});
+        }
     } catch (err) {
         res.status(400).json({msg:err});
     }
