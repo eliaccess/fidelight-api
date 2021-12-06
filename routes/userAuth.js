@@ -5,12 +5,7 @@ const router = express.Router();
 const db = require('../modules/dbConnect');
 const dbAuth = require('../modules/dbConnectAuth');
 const { check, validationResult } = require('express-validator');
-const googleApi = require('./googleAuth');
-const url = require('url');
-/*
-const passport = require('passport');
-const FacebookStrategy = require('passport-facebook').Strategy;
-*/
+var emailFunctions = require('../modules/emailFunctions');
 
 // Token expiration for users can be changed here
 function getAccessToken(id, type){
@@ -59,7 +54,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
         };
 
         //Verifying that the user doesn't exist in table then inserting the data
-        db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
+        db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], async (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
@@ -67,13 +62,14 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                 if (rows[0]) {
                     res.status(409).jsonp({msg:"Your email address or phone number is already registered !"});
                 } else {
-                    db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                    db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
                         if (err) {
                             res.status(410).jsonp({msg:err});
                             next(err);
                         } else {
                             //Adding the user to default user type
-                            db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                            let insertedId = result.insertId;
+                            db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                 if (err) {
                                     res.status(410).jsonp({msg:err});
                                     next(err);
@@ -82,7 +78,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                         user: result.insertId,
                                         user_type: rows2[0].id
                                     };
-                                    db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                    db.query("INSERT INTO user_category SET ?", [regData2], async (iErr, result2) => {
                                         if (err) {
                                             res.status(410).jsonp({msg:err});
                                             next(err);
@@ -94,12 +90,39 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                                 refresh_token: refToken
                                             }
                                             let token = getAccessToken(result.insertId, 'user');
-                                            dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                            dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                                 if(err){
-                                                    res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:"success"});
+                                                    let emailToken = getEmailToken(insertedId, 'user');
+                                                    let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
+                                                    let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, req.body.surname, linkConf);
+                                                    let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                                    let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                                    if (result){
+                                                        let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
+                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                    } else {
+                                                        console.log("Error: mail not sent");
+                                                        let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                        res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                    }
                                                     next(err);
                                                 } else {
-                                                    res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                                    let emailToken = getEmailToken(insertedId, 'user');
+                                                    let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
+                                                    let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, req.body.surname, linkConf);
+                                                    let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                                    let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                                    if (result){
+                                                        let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
+                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                    } else {
+                                                        console.log("Error: mail not sent");
+                                                        let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                        res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                    }
+                                                    next(err);
                                                 }
                                             });
                                         }
@@ -115,132 +138,6 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
         res.status(400).json({msg:err});
     }
 });
-
-// Routes for Google OAuth2
-const scopes = ['email', 'profile'];
-
-exports.requestGmailAuth = function (req, res, next){
-    let url = googleApi.generateUrl(scopes);
-    res.status(200).jsonp(url);
-}
-
-exports.getGmailUserInfo = async function (req, res, next){
-    const qs = new url.URL(req.url, process.env.DEFAULT_AUTH_SERVER).searchParams;
-    let code = qs.get('code');
-
-    if(!code){
-        next(new Error('No code provided'))
-    }
-
-    googleApi.getUserInfo(code)
-        .then(function(response){
-            try {
-                validationResult(req).throw();
-                const qrCode = qrGen(10);
-                let regData = {
-                    surname: response.usrData.given_name,
-                    name: response.usrData.family_name,
-                    hash_pwd: 0,
-                    salt: "no",
-                    email: response.usrData.email,
-                    registration_date: new Date(),
-                    qr_key: qrCode,
-                    google_token: response.refresh_token,
-                    profile_picture_link: response.usrData.picture,
-                    verified: response.usrData.verified_email ? 1 : 0,
-                    active: 1
-                };
-        
-                //Verifying that the user doesn't exist in table then inserting the data
-                db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], (err, rows, results) => {
-                    if (err) {
-                        res.status(410).jsonp(err);
-                        next(err);
-                    } else {
-                        if (rows[0]) {
-                            /* If the account already exists, then we login the user */
-                            const token = getAccessToken(rows[0].id, 'user');
-
-                            dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
-                                if(err){
-                                    res.status(410).jsonp(err);
-                                    next(err);
-                                } else {
-                                    if(rows2[0]) res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, access_token: token, refresh_token: rows2[0].refresh_token});
-                                    else{
-                                        refToken = getRefreshToken(rows[0].id, 'user');
-                                        let saveRefToken = {
-                                            id: rows[0].id,
-                                            refresh_token: refToken
-                                        }
-                                        dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
-                                            if(err){
-                                                res.status(410).jsonp(err);
-                                                next(err);
-                                            } else {
-                                                res.status(200).jsonp({id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, access_token: token, refresh_token: refToken});
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-                        } else {
-                            db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
-                                if (err) {
-                                    res.status(410).jsonp(err);
-                                    next(err);
-                                } else {
-                                    //Adding the user to default user type
-                                    db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
-                                        if (err) {
-                                            res.status(410).jsonp(err);
-                                            next(err);
-                                        } else {
-                                            let regData2 = {
-                                                user: result.insertId,
-                                                user_type: rows2[0].id
-                                            };
-                                            db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
-                                                if (err) {
-                                                    res.status(410).jsonp(err);
-                                                    next(err);
-                                                }
-                                                else{
-                                                    refToken = getRefreshToken(result.insertId, 'user');
-                                                    let saveRefToken = {
-                                                        id: result.insertId,
-                                                        refresh_token: refToken
-                                                    }
-                                                    let token = getAccessToken(result.insertId, 'user');
-                                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
-                                                        if(err){
-                                                            res.status(200).jsonp({id: result.insertId, qr_key: qrCode + '.' + result.insertId, access_token: token});
-                                                            next(err);
-                                                        } else {
-                                                            res.status(200).jsonp({id: result.insertId, qrCode: qrCode + '.' + result.insertId, access_token: token, refresh_token: refToken});
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    }
-                });
-            } catch (err) {
-                res.status(400).json(err);
-            }
-        }).catch(function(e){
-            next(new Error(e.message))
-            res.status(500).jsonp("An issue occured when trying to create your account. Please try again later.");
-    });
-}
-
-router.get('/api/user/gauth/authenticate/', exports.getGmailUserInfo);
-
-router.get('/api/user/gauth', exports.requestGmailAuth);
 
 let refToken = [
     check('refreshToken').exists()
@@ -318,84 +215,135 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
     }
 });
 
-/*
-passport.serializeUser(function(user, done) {
-    done(null, user);
-});
 
-passport.deserializeUser(function(obj, done) {
-    done(null, obj);
-});
+let socialAuth = [
+    check('userId').exists(),
+    check('provider').exists(),
+    check('email', 'Username Must Be an Email Address').isEmail(),
+    check('name').exists()
+];
 
+router.post('/v1/user/social/', socialAuth, (req, res, next) => {
+    try {
+        validationResult(req).throw();
 
-passport.use(
-    new FacebookStrategy(
-        {
-            clientID: "FACEBOOK_CLIENT_ID",
-            clientSecret: "process.env.FACEBOOK_SECRET",
-            callbackURL: "process.env.FACEBOOK_REDIRECT_URI",
-            profileFields: ["email", "name"]
-        },
-        function(accessToken, refreshToken, profile, done) {
-            try{
-                const { email, first_name, last_name } = profile._json;
-                const userData = {
-                    email: email,
-                    surname: first_name,
-                    lastname: last_name
-                };
-
-                const qrCode = qrGen(10);
-                let regData = {
-                    surname: userData.surname,
-                    name: userData.lastname,
-                    hash_pwd: 0,
-                    salt: "no",
-                    email: userData.email ? userData.email : null,
-                    registration_date: new Date(),
-                    qr_key: qrCode,
-                    facebook_token: refreshToken,
-                    verified: userData.email ? 1 : 0,
-                    active: 1
-                };
-                
-                if(!userData.email){
-                    done(new Error("Your Facebook account does not have a verified account."));
+        if(req.body.provider == 'google'){
+            db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
                 } else {
-                    //Verifying that the user doesn't exist in table then inserting the data
-                    db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ?", [regData.email], (err, rows, results) => {
-                        if (err) {
-                            res.status(410).jsonp(err);
-                            next(err);
-                        } else {
-                            if (rows[0]) {
-                                // If the account already exists, then we login the user 
-                                const token = jwt.sign({ id: rows[0].id, sName: rows[0].surname, name: rows[0].name, type: 'user'}, config.secret);
-                                done(null, token, 'test');
+                    if (rows[0] && rows[0].google_token == req.body.userId) {
+                        // The account exists, then we just give back a token
+                        const token = getAccessToken(rows[0].id, 'user');
+                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                            if(err){
+                                res.status(410).jsonp({msg:err});
+                                next(err);
                             } else {
-                                db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"success"});
+                                else{
+                                    refToken = getRefreshToken(rows[0].id, 'user');
+                                    let saveRefToken = {
+                                        id: rows[0].id,
+                                        refresh_token: refToken
+                                    }
+                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(410).jsonp({msg:err});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    } else if (rows[0]){
+                        // The account doesn't exist but the email is used, then we tell it to the user
+                        res.status(409).jsonp({msg:"Your email is already registered, but not linked to this Google account!"});
+                    }
+                    else {
+                        // The account doesn't exist, then we create the account and we give back a token
+                        const qrCode = qrGen(10);
+
+                        let regData = {
+                            surname: null,
+                            name: req.body.name,
+                            hash_pwd: 0,
+                            salt: 0,
+                            email: req.body.email,
+                            phone: null,
+                            birthdate: null,
+                            google_token: req.body.userId,
+                            registration_date: new Date(),
+                            qr_key: qrCode,
+                            verified: 0,
+                            active: 1
+                        };
+                        
+                        db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                //Adding the user to default user type
+                                db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
                                     if (err) {
-                                        done(new Error(err));
+                                        res.status(410).jsonp({msg:err});
                                         next(err);
                                     } else {
-                                        //Adding the user to default user type
-                                        db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                        let regData2 = {
+                                            user: result.insertId,
+                                            user_type: rows2[0].id
+                                        };
+                                        db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
                                             if (err) {
-                                                done(new Error(err));
+                                                res.status(410).jsonp({msg:err});
                                                 next(err);
-                                            } else {
-                                                let regData2 = {
-                                                    user: result.insertId,
-                                                    user_type: rows2[0].id
-                                                };
-                                                db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
-                                                    if (err) {
-                                                        done(new Error(err));
+                                            }
+                                            else{
+                                                refToken = getRefreshToken(result.insertId, 'user');
+                                                let saveRefToken = {
+                                                    id: result.insertId,
+                                                    refresh_token: refToken
+                                                }
+                                                let token = getAccessToken(result.insertId, 'user');
+                                                dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                                    if(err){
+                                                        let emailToken = getEmailToken(insertedId, 'user');
+                                                        let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
+                                                        let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, req.body.surname, linkConf);
+                                                        let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                                        let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                                        if (result){
+                                                            let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
+                                                            res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                        } else {
+                                                            console.log("Error: mail not sent");
+                                                            let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                            res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                        }
+                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:"success"});
                                                         next(err);
-                                                    }
-                                                    else{
-                                                        const token = jwt.sign({ id: result.insertId, sName: userData.surname, name: userData.lastname, type: 'user'}, config.secret);
-                                                        done(null, token, 'test');
+                                                    } else {
+                                                        let emailToken = getEmailToken(insertedId, 'user');
+                                                        let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
+                                                        let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, null, linkConf);
+                                                        let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                                        let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                                        if (result){
+                                                            let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
+                                                            res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                        } else {
+                                                            console.log("Error: mail not sent");
+                                                            let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                            res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                        }
+                                                        next(err);
+                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:"success"});
                                                     }
                                                 });
                                             }
@@ -403,42 +351,144 @@ passport.use(
                                     }
                                 });
                             }
-                        }
-                    });
+                        });
+                    }
                 }
-            } catch (err) {
-                done(err);
-            }
+            });
+        } else if (req.body.provider == 'facebook'){
+            db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else {
+                    if (rows[0] && rows[0].facebook_token == req.body.userId) {
+                        // The account exists, then we just give back a token
+                        const token = getAccessToken(rows[0].id, 'user');
+                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                            if(err){
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"success"});
+                                else{
+                                    refToken = getRefreshToken(rows[0].id, 'user');
+                                    let saveRefToken = {
+                                        id: rows[0].id,
+                                        refresh_token: refToken
+                                    }
+                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                        if(err){
+                                            res.status(410).jsonp({msg:err});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    } else if (rows[0]){
+                        // The account doesn't exist but the email is used, then we tell it to the user
+                        res.status(409).jsonp({msg:"Your email is already registered, but not linked to this Facebook account!"});
+                    }
+                    else {
+                        // The account doesn't exist, then we create the account and we give back a token
+                        const qrCode = qrGen(10);
+
+                        let regData = {
+                            surname: null,
+                            name: req.body.name,
+                            hash_pwd: 0,
+                            salt: 0,
+                            email: req.body.email,
+                            phone: null,
+                            birthdate: null,
+                            facebook_token: req.body.userId,
+                            registration_date: new Date(),
+                            qr_key: qrCode,
+                            verified: 0,
+                            active: 1
+                        };
+                        
+                        db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                //Adding the user to default user type
+                                db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                    if (err) {
+                                        res.status(410).jsonp({msg:err});
+                                        next(err);
+                                    } else {
+                                        let regData2 = {
+                                            user: result.insertId,
+                                            user_type: rows2[0].id
+                                        };
+                                        db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                            if (err) {
+                                                res.status(410).jsonp({msg:err});
+                                                next(err);
+                                            }
+                                            else{
+                                                refToken = getRefreshToken(result.insertId, 'user');
+                                                let saveRefToken = {
+                                                    id: result.insertId,
+                                                    refresh_token: refToken
+                                                }
+                                                let token = getAccessToken(result.insertId, 'user');
+                                                dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                                    if(err){
+                                                        let emailToken = getEmailToken(insertedId, 'user');
+                                                        let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
+                                                        let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, req.body.surname, linkConf);
+                                                        let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                                        let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                                        if (result){
+                                                            let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
+                                                            res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                        } else {
+                                                            console.log("Error: mail not sent");
+                                                            let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                            res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                        }
+                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:"success"});
+                                                        next(err);
+                                                    } else {
+                                                        let emailToken = getEmailToken(insertedId, 'user');
+                                                        let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
+                                                        let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, null, linkConf);
+                                                        let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                                        let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                                        if (result){
+                                                            let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
+                                                            res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                        } else {
+                                                            console.log("Error: mail not sent");
+                                                            let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
+                                                            res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                        }
+                                                        next(err);
+                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            res.status(404).jsonp({msg: "Provider not found"});
         }
-    )
-);
-
-router.get('/api/user/fauth', passport.authenticate("facebook", {scope: ['email', 'public_profile']}));
-
-router.get('/api/user/fauth/authenticate', passport.authenticate("facebook", {
-        scope: ['email', 'public_profile'],
-        //successRedirect: "/api/user/fauth/authenticate/success/",
-        failureRedirect: "/api/user/fauth/authenticate/failure/"
-    }, (error, token, res) => {
-        // Successful authentication, redirect home.
-        console.log(error, token, res);
-        try{
-            if(error) throw(error);
-            else res.status(200).jsonp(token);
-        } catch (err) {
-            res.status(400).json(err);
-        }
-    })
-);
-
-
-router.get('/api/user/fauth/authenticate/failure/', (req, res) => {
-    res.status(500).send("An error occured. Please try again later.");
+    } catch (err) {
+        res.status(400).json({msg:err});
+    }
 });
-
-router.get('/api/user/fauth/authenticate/success/', (req, res) => {
-    res.status(200).send("Success");
-});
-*/
 
 module.exports = router;
