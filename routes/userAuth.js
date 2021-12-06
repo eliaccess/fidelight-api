@@ -313,7 +313,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                                     if(err){
                                                         let emailToken = getEmailToken(insertedId, 'user');
                                                         let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
-                                                        let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, req.body.surname, linkConf);
+                                                        let content = await emailFunctions.generateConfirmationEmailUser(req.body.name, null, linkConf);
                                                         let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
                                                         let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
 
