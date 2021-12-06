@@ -223,12 +223,12 @@ let socialAuth = [
     check('name').exists()
 ];
 
-router.post('/v1/user/social/', socialAuth, (req, res, next) => {
+router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
     try {
         validationResult(req).throw();
 
         if(req.body.provider == 'google'){
-            db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+            db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -236,7 +236,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                     if (rows[0] && rows[0].google_token == req.body.userId) {
                         // The account exists, then we just give back a token
                         const token = getAccessToken(rows[0].id, 'user');
-                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], async (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -248,7 +248,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                         id: rows[0].id,
                                         refresh_token: refToken
                                     }
-                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
                                             res.status(410).jsonp({msg:err});
                                             next(err);
@@ -282,13 +282,13 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                             active: 1
                         };
                         
-                        db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                        db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
                             if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
                                 //Adding the user to default user type
-                                db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
@@ -297,7 +297,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                             user: result.insertId,
                                             user_type: rows2[0].id
                                         };
-                                        db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                        db.query("INSERT INTO user_category SET ?", [regData2], async (iErr, result2) => {
                                             if (err) {
                                                 res.status(410).jsonp({msg:err});
                                                 next(err);
@@ -309,7 +309,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                                     refresh_token: refToken
                                                 }
                                                 let token = getAccessToken(result.insertId, 'user');
-                                                dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                                dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                                     if(err){
                                                         let emailToken = getEmailToken(insertedId, 'user');
                                                         let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
@@ -343,7 +343,6 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                                             res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
                                                         }
                                                         next(err);
-                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:"success"});
                                                     }
                                                 });
                                             }
@@ -356,7 +355,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                 }
             });
         } else if (req.body.provider == 'facebook'){
-            db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
+            db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -364,7 +363,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                     if (rows[0] && rows[0].facebook_token == req.body.userId) {
                         // The account exists, then we just give back a token
                         const token = getAccessToken(rows[0].id, 'user');
-                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
+                        dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], async (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -376,7 +375,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                         id: rows[0].id,
                                         refresh_token: refToken
                                     }
-                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                    dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
                                             res.status(410).jsonp({msg:err});
                                             next(err);
@@ -410,13 +409,13 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                             active: 1
                         };
                         
-                        db.query("INSERT INTO user SET ?", [regData], (iErr, result) => {
+                        db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
                             if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);
                             } else {
                                 //Adding the user to default user type
-                                db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", (err, rows2, results2) => {
+                                db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                     if (err) {
                                         res.status(410).jsonp({msg:err});
                                         next(err);
@@ -425,7 +424,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                             user: result.insertId,
                                             user_type: rows2[0].id
                                         };
-                                        db.query("INSERT INTO user_category SET ?", [regData2], (iErr, result2) => {
+                                        db.query("INSERT INTO user_category SET ?", [regData2], async (iErr, result2) => {
                                             if (err) {
                                                 res.status(410).jsonp({msg:err});
                                                 next(err);
@@ -437,7 +436,7 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                                     refresh_token: refToken
                                                 }
                                                 let token = getAccessToken(result.insertId, 'user');
-                                                dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
+                                                dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                                     if(err){
                                                         let emailToken = getEmailToken(insertedId, 'user');
                                                         let linkConf = "https://api.fidelight.fr/v1/user/verify/" + emailToken
@@ -471,7 +470,6 @@ router.post('/v1/user/social/', socialAuth, (req, res, next) => {
                                                             res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
                                                         }
                                                         next(err);
-                                                        res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:"success"});
                                                     }
                                                 });
                                             }
