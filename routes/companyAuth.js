@@ -111,9 +111,9 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                             let linkConf = "https://api.fidelight.fr/v1/company/verify/" + emailToken
                                             let content = await emailFunctions.generateConfirmationEmailCompany(regData.name, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(regData.email, content);
-                                            let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+                                            let resultEmail = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
 
-                                            if (result){
+                                            if (resultEmail){
                                                 let msg = "Email sent to " + mailOptions.to;
                                                 res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token}, msg: msg});
                                             } else {
@@ -128,9 +128,9 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                                             let content = await emailFunctions.generateConfirmationEmailCompany(req.body.name, linkConf);
                                             let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
                                             
-                                            let result = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+                                            let resultEmail = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
 
-                                            if (result){
+                                            if (resultEmail){
                                                 let msg = "Email sent to " + mailOptions.to;
                                                 res.status(200).jsonp({data:{id: result.insertId, login: logGened, accessToken: token, refreshToken: refToken}, msg: msg});
                                             } else {
