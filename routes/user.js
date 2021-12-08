@@ -33,7 +33,7 @@ router.put('/v1/user/password', passAuth, (req, res, next) => {
                 } else {
                     if (rows[0]) {
                         // verify if the password is already setup, else we change it
-                        if(rows[0].hash_pwd == 0){
+                        if(rows[0].hash_pwd == null){
                             if(req.body.oldPassword == null){
                                 db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
                                     if (iErr) {
