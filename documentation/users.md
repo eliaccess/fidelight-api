@@ -98,7 +98,7 @@
 
 **Method** : `POST`
 
-**Auth required** : NO
+**Auth required** : YES
 
 ## Request Format
 
@@ -122,6 +122,36 @@
 ```json
 {
   "msg":"Account successfully linked."
+}
+```
+
+# Unlink a user social account (using Google or Facebook) from an existing Fidelight account
+
+**URL** : `https://api.fidelight.fr/v1/user/connect/social/`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+## Request Format
+
+**Content example**
+
+```json
+{
+  "provider": "google"
+}
+```
+
+## Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "msg":"Account successfully unlinked."
 }
 ```
 

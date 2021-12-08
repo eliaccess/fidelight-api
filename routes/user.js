@@ -410,4 +410,57 @@ router.post('/v1/user/connect/social/', socialAuth, async (req, res, next) => {
     }
 });
 
+let delSocialAuth = [
+    check('provider').exists(),
+    midWare.checkToken
+];
+
+router.delete('/v1/user/connect/social/', delSocialAuth, async (req, res, next) => {
+    try {
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp({msg:'Access forbidden'});
+            return 2;
+        }
+
+        validationResult(req).throw();
+
+        if(req.body.provider == 'google' || req.body.provider == 'facebook'){
+            db.query("SELECT * FROM user_social WHERE user = ? AND provider = ?", [req.decoded.id, req.body.provider], async (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else {
+                    if (rows[0]) {
+                        db.query("SELECT hash_pwd FROM user WHERE id = ?", [req.decoded.id], async (err, rows, results) => {
+                            if(err){
+                                res.status(410).jsonp({msg:err});
+                                next(err);
+                            } else {
+                                if(rows[0].hash_pwd == null){
+                                    res.status(403).jsonp({msg:"Please set up your password before unlinking your " + req.body.provider + " account."});
+                                } else {
+                                    db.query("DELETE FROM user_social WHERE user = ? AND provider = ?", [req.decoded.id, req.body.provider], async (err, rows, results) => {
+                                        if(err){
+                                            res.status(410).jsonp({msg:err});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({msg:"Your " + req.body.provider + " account was unlinked from your Fidelight account."});
+                                        }
+                                    });
+                                }
+                            }
+                        });  
+                    } else {
+                        res.status(404).jsonp({msg:"No " + req.body.provider + " account linked to this Fidelight account."});
+                    }
+                }
+            });
+        } else {
+            res.status(404).jsonp({msg: "Provider not found"});
+        }
+    } catch (err) {
+        res.status(400).json({msg:err});
+    }
+});
+
 module.exports = router;
