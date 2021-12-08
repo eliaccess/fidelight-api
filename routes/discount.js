@@ -269,14 +269,14 @@ router.post('/v1/discount/picture/:discountId', multer.single('picture'), editPi
     }
 });
 
-router.delete('/v1/discount/picture/:discountId', editPicDiscount, (req, res, next) => {
+router.delete('/v1/discount/picture/:discountId', editPicDiscount, async (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
-            db.query("SELECT * FROM discount WHERE id = ? and company = ?", [req.params.discountId, req.decoded.id], (err, rows, results) => {
+            db.query("SELECT * FROM discount WHERE id = ? and company = ?", [req.params.discountId, req.decoded.id], async (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -293,7 +293,7 @@ router.delete('/v1/discount/picture/:discountId', editPicDiscount, (req, res, ne
 
                         deleteFile().catch(console.error);
 
-                        db.query("UPDATE discount SET picture_link = null WHERE id = ?", [req.params.discountId], (err, rows, results) => {
+                        db.query("UPDATE discount SET picture_link = null WHERE id = ?", [req.params.discountId], async (err, rows, results) => {
                             if (err) {
                                 res.status(410).jsonp({msg:err});
                                 next(err);

@@ -540,14 +540,14 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
 });
 
 /* IF ADDING PICTURES IN DISCOUNTS THEN NEEDS TO DELETE THEM NOW */
-router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
+router.delete('/v1/company/register', midWare.checkToken, async (req, res, next) => {
     try {
         validationResult(req).throw();
         if(req.decoded.type != 'company'){
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
         } else {
-            db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+            db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], async (err, rows, results) => {
                 if (err) {
                     res.status(410).jsonp({msg:err});
                     next(err);
@@ -556,22 +556,30 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                         res.status(410).jsonp({msg:"Inactive accounts can not be deleted!"});
                     } else {
                         /* Deleting the logo and background picture of the company */
-                        fs.unlink(rows[0].logo_link, function(err, rows){
-                            if(err && err.code !== "ENOENT"){
-                                res.status(410).jsonp({msg:err});
-                                next(err);
-                            }
-                        });
+                        bucketName = "fidelight-api";
 
-                        fs.unlink(rows[0].background_picture, function(err, rows){
-                            if(err && err.code !== "ENOENT"){
-                                res.status(410).jsonp({msg:err});
-                                next(err);
+                        if(rows[0].picture_link){
+                            fileNameLogo = rows[0].picture_link;
+                            async function deleteFile() {
+                                await storage.bucket(bucketName).file(fileNameLogo).delete();
+                            
+                                console.log(`gs://${bucketName}/${fileNameLogo} deleted`);
                             }
-                        });
+                            deleteFile().catch(console.error);
+                        }
+
+                        if(rows[0].background_picture){
+                            fileNameBackground = rows[0].background_picture;
+                            async function deleteFile() {
+                                await storage.bucket(bucketName).file(fileNameBackground).delete();
+                            
+                                console.log(`gs://${bucketName}/${fileNameBackground} deleted`);
+                            }
+                            deleteFile().catch(console.error);
+                        }
 
                         /* Deleting the company from users liked companies */
-                        db.query("DELETE FROM user_like WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                        db.query("DELETE FROM user_like WHERE company = ?", [req.decoded.id], async (err, rows, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -579,14 +587,14 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                         });
 
                         /* Deleting company private information */
-                        db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', website='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], (err, rows, results) => {
+                        db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', website='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], async (err, rows, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
                             }
                             else{
                                 /* Deleting locations photo locations */
-                                db.query("SELECT id FROM company_location WHERE company = ?", [req.decoded.id], (err, rows2, results) => {
+                                db.query("SELECT id FROM company_location WHERE company = ?", [req.decoded.id], async (err, rows2, results) => {
                                     if(err){
                                         res.status(410).jsonp({msg:err});
                                         next(err);
@@ -594,14 +602,14 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                         if(rows2){
                                             rows2.forEach(line => {
                                                 /* Deleting the company schedule */
-                                                db.query("DELETE FROM schedule WHERE company_location = ?", [line.id], (err, rows, results) => {
+                                                db.query("DELETE FROM schedule WHERE company_location = ?", [line.id], async (err, rows, results) => {
                                                     if(err){
                                                         res.status(410).jsonp({msg:err});
                                                         next(err);
                                                     }
                                                 });
                                                 /* Getting every picture link to delete them */
-                                                db.query("SELECT picture_link FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows3, results) => {
+                                                db.query("SELECT picture_link FROM company_location_picture WHERE company_location = ?", [line.id], async (err, rows3, results) => {
                                                     if(err){
                                                         res.status(410).jsonp({msg:err});
                                                         next(err);
@@ -609,19 +617,21 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                                         if(rows3){
                                                             rows3.forEach(picture => {
                                                                 /* Deleting every picture */
-                                                                fs.unlink(picture.link_picture, function(err, rows){
-                                                                    if(err && err.code !== "ENOENT"){
-                                                                        res.status(410).jsonp({msg:err});
-                                                                        next(err);
-                                                                    } else {
-                                                                        db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], (err, rows, results) => {
-                                                                            if(err){
-                                                                                res.status(410).jsonp({msg:err});
-                                                                                next(err);
-                                                                            }
-                                                                        });
+                                                                if(rows[0].background_picture){
+                                                                    async function deleteFile() {
+                                                                        await storage.bucket(bucketName).file(picture).delete();
+                                                                    
+                                                                        console.log(`gs://${bucketName}/${picture} deleted`);
                                                                     }
-                                                                });
+                                                                    deleteFile().catch(console.error);
+                                                                }
+                                                            });
+
+                                                            db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], async (err, rows, results) => {
+                                                                if(err){
+                                                                    res.status(410).jsonp({msg:err});
+                                                                    next(err);
+                                                                }
                                                             });
                                                         }
                                                     }
@@ -630,31 +640,41 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                         }
                                         
                                         /* removing company location private information */
-                                        db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                                        db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], async (err, rows, results) => {
                                             if(err){
                                                 res.status(410).jsonp({msg:err});
                                                 next(err);
                                             } else {
                                                 /* Deleting users balances in that company */
-                                                db.query("DELETE FROM balance WHERE company = ?", [req.decoded.id], (err, rows, results) => {
+                                                db.query("DELETE FROM balance WHERE company = ?", [req.decoded.id], async (err, rows, results) => {
                                                     if(err){
                                                         res.status(410).jsonp({msg:err});
                                                         next(err);
                                                     } else {
                                                         /* Deleting discounts and discounts information from the company */
-                                                        db.query("SELECT * FROM discount WHERE company = ? AND active = 1", [req.decoded.id], (err, results) => {
+                                                        db.query("SELECT * FROM discount WHERE company = ? AND active = 1", [req.decoded.id], async (err, results) => {
                                                             if(err){
                                                                 res.status(410).jsonp({msg:err});
                                                                 next(err);
                                                             } else {
                                                                 if(results[0]){
                                                                     results.forEach(element => {
-                                                                        db.query("DELETE FROM discount_repetition WHERE discount = ?", [element.id], (err, result) => {
+                                                                        /* Deleting the picture for every discount */
+                                                                        if(element.picture_link){
+                                                                            async function deleteFile() {
+                                                                                await storage.bucket(bucketName).file(element.picture_link).delete();
+                                                                            
+                                                                                console.log(`gs://${bucketName}/${element.picture_link} deleted`);
+                                                                            }
+                                                                            deleteFile().catch(console.error);
+                                                                        }
+
+                                                                        db.query("DELETE FROM discount_repetition WHERE discount = ?", [element.id], async (err, result) => {
                                                                             if (err) {
                                                                                 res.status(410).jsonp({msg:err});
                                                                                 next(err);
                                                                             } else {
-                                                                                db.query("DELETE FROM discount_value WHERE discount = ?", [element.id], (err, result) => {
+                                                                                db.query("DELETE FROM discount_value WHERE discount = ?", [element.id], async (err, result) => {
                                                                                     if (err) {
                                                                                         res.status(410).jsonp({msg:err});
                                                                                         next(err);
@@ -666,7 +686,7 @@ router.delete('/v1/company/register', midWare.checkToken, (req, res, next) => {
                                                                                             per_day: 0,
                                                                                             active: 0
                                                                                         }
-                                                                                        db.query("UPDATE discount SET ? WHERE id = ?", [dstInfo, element.id], (err, result) => {
+                                                                                        db.query("UPDATE discount SET ? WHERE id = ?", [dstInfo, element.id], async (err, result) => {
                                                                                             if (err) {
                                                                                                 res.status(410).jsonp({msg:err});
                                                                                                 next(err);
