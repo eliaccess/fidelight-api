@@ -829,5 +829,6 @@ module.exports = {
 	sendEmail,
 	generateEmailOptions,
 	generateConfirmationEmailCompany,
-	generateConfirmationEmailUser
+	generateConfirmationEmailUser,
+	generateLinkedSocialAccountEmail
 }
