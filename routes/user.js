@@ -349,109 +349,65 @@ router.get('/v1/user/verify/:token', (req, res, next) => {
     }
 });
 
-/*
-let vrAuth = [
-    check('qrCode').exists(),
+let socialAuth = [
+    check('userId').exists(),
+    check('provider').exists(),
+    check('email', 'Username Must Be an Email Address').isEmail(),
+    check('name').exists(),
     midWare.checkToken
 ];
-*/
 
-/*
-router.post('/api/user/disconnect', midWare.checkToken, (req, res, next) => {
+router.post('/v1/user/connect/social/', socialAuth, async (req, res, next) => {
     try {
-        res.status(200).jsonp("Token deleted successfully!");
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp({msg:'Access forbidden'});
+            return 2;
+        }
 
-/*
-let passAuth = [
-    check('password').exists(),
-    check('email', 'Username Must Be an Email Address').isEmail()
-];
-
-router.put('/api/user/password', passAuth, (req, res, next) => {
-    try {
         validationResult(req).throw();
-        const BCRYPT_SALT_ROUNDS = 12;
-        let regData = {
-            hash_pwd: bcrypt.hashSync(req.body.password, BCRYPT_SALT_ROUNDS),
-        };
 
-        db.query("UPDATE user SET ? WHERE email = ?", [regData, req.body.email], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                db.query("SELECT * FROM user WHERE email = ?", [req.body.email], (iErr, iRows, iResult) => {
-                    if (iErr) {
-                        res.status(410).jsonp(iErr);
-                        next(iErr);
+        if(req.body.provider == 'google' || req.body.provider == 'facebook'){
+            db.query("SELECT * FROM user_social WHERE BINARY email = ? AND social_id = ? AND provider = ?", [req.body.email, req.body.userId, req.body.provider], async (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
+                } else {
+                    if (rows[0]) {
+                        // The account exists, then we just give back a token
+                        if(rows[0].user == req.decoded.id){
+                            res.status(200).jsonp({msg:"Your " + req.body.provider + " account is already linked to your Fidelight account."});
+                        } else {
+                            res.status(409).jsonp({msg:"This " + req.body.provider + " account is already linked to another Fidelight account."});
+                        }
                     } else {
-                        const token = jwt.sign({ id: iRows[0].id, sName: iRows[0].surname, name:  iRows[0].name}, config.secret);
-                        res.status(200).jsonp({token: token});
-                    }
-                });
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});*/
+                        let socData = {
+                            user: req.decoded.id,
+                            social_id: req.body.userId,
+                            email: req.body.email,
+                            provider: req.body.provider
+                        }
 
-/*
-router.post('/api/user/verify', vrAuth, (req, res, next) => {
-    try {
-        validationResult(req).throw();
-        db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, result) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    if (rows[0].qr_key == req.body.qrCode) {
-                        db.query("UPDATE user SET ? WHERE id = ?", [{ verified: '1' }, req.decoded.id], (err, result) => {
-                            if (err) {
-                                res.status(410).jsonp(err);
+                        db.query("INSERT INTO user_social SET ?", [socData], async (iErr, result2) => {
+                            if(iErr){
+                                res.status(410).jsonp({msg:iErr});
+                                next(iErr);
                             } else {
-                                res.status(200).jsonp("You are successfully verified!");
+                                let content = await emailFunctions.generateLinkedSocialAccountEmail(req.body.provider);
+                                let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                let resultEmail = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                res.status(200).jsonp({msg:"Account successfully linked."});
                             }
                         });
-                    } else {
-                        res.status(410).jsonp("Verification failed!");
                     }
-                } else {
-                    res.status(410).jsonp("Invalid User!");
                 }
-            }
-        });
+            });
+        } else {
+            res.status(404).jsonp({msg: "Provider not found"});
+        }
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:err});
     }
 });
-*/
-
-/*
-router.get('/api/user/type', (req, res, next) => {
-    try {
-        db.query("SELECT * FROM user_type", (err, rows, result) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                if (rows[0]) {
-                    res.status(200).jsonp(rows);
-                } else {
-                    res.status(410).jsonp("User type not found!");
-                }
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
 
 module.exports = router;

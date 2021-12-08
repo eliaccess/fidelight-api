@@ -55,9 +55,9 @@
 
 # Register / login a user using Google or Facebook account
 
-**URL** : `https://api.fidelight.fr/v1/user/register/gauth`
+**URL** : `https://api.fidelight.fr/v1/user/social/`
 
-**Method** : `GET`
+**Method** : `POST`
 
 **Auth required** : NO
 
@@ -92,6 +92,38 @@
 }
 ```
 
+# Link a user social account (using Google or Facebook) to an existing Fidelight account
+
+**URL** : `https://api.fidelight.fr/v1/user/connect/social/`
+
+**Method** : `POST`
+
+**Auth required** : NO
+
+## Request Format
+
+**Content example**
+
+```json
+{
+  "userId": "02564086521321",
+  "name": "Dos Santos",
+  "email": "jeff.dos-santos@gmail.com",
+  "provider": "google"
+}
+```
+
+## Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "msg":"Account successfully linked."
+}
+```
 
 # Change / set the password of a user
 
