@@ -29,7 +29,7 @@
 
 ```json
 {
-  "msg":"Registered Successfully",
+  "msg":"Email sent to jeff.dos-santos@gmail.com. Please confirm your account.",
   "data":{
     "id": 2,
     "qrCode": "aLFO1AlBdL.2",
@@ -53,35 +53,9 @@
 **Code** : `200 OK`
 
 
-# Register / login a user through Google OAuth2.0
+# Register / login a user using Google or Facebook account
 
 **URL** : `https://api.fidelight.fr/v1/user/register/gauth`
-
-**Method** : `GET`
-
-**Auth required** : NO
-
-## Success Response
-
-**Code** : `200 OK`
-
-**Content example**
-
-Answers with a link to authentify with google. Redirecting on `https://api.fidelight.fr/v1/user/register/gauth/authenticate` to get this :
-
-```json
-{
-  "id": 2,
-  "qrCode": "aLFO1AlBdL.2",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gR9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gR9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-}
-```
-
-
-# Register / login a user through Facebook OAuth2.0 (unsupported yet, do not work with it)
-
-**URL** : `https://api.fidelight.fr/v1/user/register/fauth`
 
 **Method** : `GET`
 
@@ -90,14 +64,36 @@ Answers with a link to authentify with google. Redirecting on `https://api.fidel
 ## Request Format
 
 **Content example**
-To define
+
+```json
+{
+  "userId": "02564086521321",
+  "name": "Dos Santos",
+  "email": "jeff.dos-santos@gmail.com",
+  "provider": "google"
+}
+```
 
 ## Success Response
 
 **Code** : `200 OK`
 
+**Content example**
 
-# Change the password of a user
+```json
+{
+  "msg":"Email sent to jeff.dos-santos@gmail.com. Please confirm your account.",
+  "data":{
+    "id": 2,
+    "qrCode": "aLFO1AlBdL.2",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gR9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gR9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+  }
+}
+```
+
+
+# Change / set the password of a user
 
 **URL** : `https://api.fidelight.fr/v1/user/password/`
 
@@ -106,6 +102,8 @@ To define
 **Auth required** : YES
 
 ## Request Format
+
+Please set the `oldPassword` to `null` if it is a set up.
 
 **Content example**
 

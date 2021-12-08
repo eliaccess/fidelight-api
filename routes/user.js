@@ -18,38 +18,55 @@ router.put('/v1/user/password', passAuth, (req, res, next) => {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp({msg:'Access forbidden'});
             return 2;
-        }
-        validationResult(req).throw();
-        const BCRYPT_SALT_ROUNDS = 12;
-        let regData = {
-            hash_pwd: bcrypt.hashSync(req.body.newPassword, BCRYPT_SALT_ROUNDS),
-            salt: BCRYPT_SALT_ROUNDS
-        };
+        } else {
+            validationResult(req).throw();
+            const BCRYPT_SALT_ROUNDS = 12;
+            let regData = {
+                hash_pwd: bcrypt.hashSync(req.body.newPassword, BCRYPT_SALT_ROUNDS),
+                salt: BCRYPT_SALT_ROUNDS
+            };
 
-        db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp({msg:err});
-                next(err);
-            } else {
-                if (rows[0]) {
-                    hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
-                    if (bcrypt.compareSync(req.body.oldPassword, hashed_pwd)) {
-                        db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
-                            if (iErr) {
-                                res.status(410).jsonp({msg:iErr});
-                                next(iErr);
-                            } else {
-                                res.status(200).jsonp({msg: "Password successfully modified!"});
-                            }
-                        });
-                    } else {
-                        res.status(410).jsonp({msg:"Wrong old password!"});
-                    }
+            db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:err});
+                    next(err);
                 } else {
-                    res.status(410).jsonp({msg:"Authentication failed!"});
+                    if (rows[0]) {
+                        // verify if the password is already setup, else we change it
+                        if(rows[0].hash_pwd == 0){
+                            if(req.body.oldPassword == null){
+                                db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
+                                    if (iErr) {
+                                        res.status(410).jsonp({msg:iErr});
+                                        next(iErr);
+                                    } else {
+                                        res.status(200).jsonp({msg: "Password successfully set up!"});
+                                    }
+                                });
+                            } else {
+                                res.status(410).jsonp({msg: "Wrong old password! Please set you password before editing it."});
+                            }
+                        } else {
+                            hashed_pwd = Buffer.from(rows[0].hash_pwd, 'base64').toString('utf-8');
+                            if (bcrypt.compareSync(req.body.oldPassword, hashed_pwd)) {
+                                db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
+                                    if (iErr) {
+                                        res.status(410).jsonp({msg:iErr});
+                                        next(iErr);
+                                    } else {
+                                        res.status(200).jsonp({msg: "Password successfully modified!"});
+                                    }
+                                });
+                            } else {
+                                res.status(410).jsonp({msg:"Wrong old password!"});
+                            }
+                        }
+                    } else {
+                        res.status(410).jsonp({msg:"Authentication failed!"});
+                    }
                 }
-            }
-        });
+            });
+        }
     } catch (err) {
         res.status(400).json({msg:err});
     }
