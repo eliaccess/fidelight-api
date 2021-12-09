@@ -85,7 +85,28 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
             } else {
                 if (rows[0]) {
                     let birthdate = rows[0].birthdate ? rows[0].birthdate.toISOString().split("T")[0] : null;
-                    res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate}, msg:"success"});
+                    let passwordSet = false;
+                    if(rows[0].hash_pwd != null){
+                        passwordSet = true
+                    }
+                    db.query("SELECT * FROM user_social WHERE user = ?", [req.decoded.id], (err, rows2, results) => {
+                        if(err){
+                            res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: false, facebook: false}, msg:"success"});
+                            next(err);
+                        } else {
+                            if(rows2[0]){
+                                let google = false;
+                                let facebook = false;
+                                rows2.forEach(element => {
+                                    if(element.provider == 'google') google = true;
+                                    else if(element.provider == 'facebook') facebook = true;
+                                });
+                                res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: google, facebook: facebook}, msg:"success"});
+                            } else {
+                                res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: false, facebook: false}, msg:"success"});
+                            }
+                        }
+                    });
                 } else {
                     res.status(404).jsonp({msg:"Profile not found!"});
                 }
