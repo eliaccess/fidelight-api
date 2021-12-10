@@ -265,7 +265,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                             }
                         });
                     } else {
-                        dbAuth.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows2, results) => {
+                        db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
@@ -412,7 +412,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                             }
                         });
                     } else {
-                        dbAuth.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows2, results) => {
+                        db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows2, results) => {
                             if(err){
                                 res.status(410).jsonp({msg:err});
                                 next(err);
