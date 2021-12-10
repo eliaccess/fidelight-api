@@ -129,7 +129,7 @@
 
 **URL** : `https://api.fidelight.fr/v1/user/connect/social/`
 
-**Method** : `POST`
+**Method** : `DELETE`
 
 **Auth required** : YES
 
