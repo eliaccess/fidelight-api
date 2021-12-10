@@ -6,6 +6,7 @@ const db = require('../modules/dbConnect');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const midWare = require('../modules/middleware');
+var emailFunctions = require('../modules/emailFunctions');
 
 let passAuth = [
     check('newPassword').exists(),

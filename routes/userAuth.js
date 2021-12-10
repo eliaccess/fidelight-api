@@ -104,11 +104,11 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
 
                                                         if (resultEmail){
                                                             let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
-                                                            res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                            res.status(200).jsonp({data:{id: insertedId, qrCode: qrCode + '.' + insertedId, accessToken: token}, msg:msg});
                                                         } else {
                                                             console.log("Error: mail not sent");
                                                             let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
-                                                            res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token}, msg:msg});
+                                                            res.status(500).jsonp({data:{id: insertedId, qrCode: qrCode + '.' + insertedId, accessToken: token}, msg:msg});
                                                         }
                                                         next(err);
                                                     } else {
@@ -120,11 +120,11 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
 
                                                         if (resultEmail){
                                                             let msg = "Email sent to " + mailOptions.to + ". Please confirm your account by clicking on the link in that email.";
-                                                            res.status(200).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                            res.status(200).jsonp({data:{id: insertedId, qrCode: qrCode + '.' + insertedId, accessToken: token, refreshToken: refToken}, msg:msg});
                                                         } else {
                                                             console.log("Error: mail not sent");
                                                             let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
-                                                            res.status(500).jsonp({data:{id: result.insertId, qrCode: qrCode + '.' + result.insertId, accessToken: token, refreshToken: refToken}, msg:msg});
+                                                            res.status(500).jsonp({data:{id: insertedId, qrCode: qrCode + '.' + insertedId, accessToken: token, refreshToken: refToken}, msg:msg});
                                                         }
                                                         next(err);
                                                     }
