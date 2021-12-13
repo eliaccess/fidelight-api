@@ -864,29 +864,6 @@ router.post('/v1/discount/use/', useDis, (req, res, next) => {
     }
 });
 
-function getTopSixFromOffers(data){
-    let indexes = [];
-    count = 0
-    // Getting the 6 top sold discounts
-    data.forEach(element => {
-        if(indexes.length < 6) indexes.push(element.discount);
-        else {
-            subcount = 0;
-            indexes.forEach(recordedIndex => {
-                console.log(data[recordedIndex]);
-                if(data[recordedIndex].times_used >= element.times_used);
-                else indexes[subcount] = element.discount;
-                subcount += 1;
-            });
-        }
-        count += 1;
-    });
-
-    // TODO: ORDER THEM
-
-    return indexes;
-}
-
 router.get('/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) => {
     try {
         /* steps :
@@ -900,28 +877,37 @@ router.get('/v1/discount/hotdeals/:city', midWare.checkToken, (req, res, next) =
         let offers = [];
         today = new Date();
 
+        const bucketName = "fidelight-api";
+        const defaultOfferPictureLink = "discount/default/offer.png";
+        const defaultRewardPictureLink = "discount/default/reward.png";
+
         db.query("SELECT id, times_used AS timesUsed, name, description, cost, picture_link AS pictureLink FROM discount WHERE company = ANY (SELECT company.id FROM company_location INNER JOIN company ON company_location.company = company.id WHERE company_location.city = ? AND company.active = 1 ORDER BY company.registration_date ASC) AND discount.active = 1 AND (discount.expiration_date IS NULL OR discount.expiration_date > ?) AND (discount.start_date <= ?) AND (discount.nb_max IS NULL OR discount.times_used < discount.nb_max) ORDER BY times_used ASC LIMIT 6", [req.params.city, today, today], (err, rows, results) => {
             if (err) {
                 res.status(410).jsonp({msg:err});
                 next(err);
             } else if (rows[0]){
-                /*
-                rows.forEach(element => {
-                    offers.push({
-                        discount: element.id,
-                        times_used: element.times_used
-                    });
-                });
-                topIndexes = getTopSixFromOffers(offers);
-                let topDiscounts = [];
-                
-                topIndexes.forEach(ind => {
-                    topDiscounts.push({discount: ind});
-                });
-                */
                 var topDiscounts = []
                 rows.forEach(element => {
-                    topDiscounts.push(element)
+                    var publicUrlPicture = null;
+                    if((element.pictureLink == null) || (element.pictureLink == "")){
+                        // Putting the default image link
+                        if(element.cost == 0 || element.cost == null){
+                            publicUrlPicture = format(
+                                `https://storage.googleapis.com/${bucketName}/${defaultOfferPictureLink}`
+                            );
+                        } else {
+                            publicUrlPicture = format(
+                                `https://storage.googleapis.com/${bucketName}/${defaultRewardPictureLink}`
+                            );
+                        }
+                    } else {
+                        publicUrlPicture = format(
+                            `https://storage.googleapis.com/${bucketName}/${element.pictureLink}`
+                        );
+                    }
+
+                    element.pictureLink = publicUrlPicture;
+                    topDiscounts.push(element);
                 });
                 res.status(200).jsonp({data:topDiscounts, msg:"success"});
             } else {
