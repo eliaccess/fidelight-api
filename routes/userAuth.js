@@ -301,6 +301,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                                             res.status(410).jsonp({msg:iErr});
                                             next(iErr);
                                         } else {
+                                        	let insertedId = result.insertId;
                                             //Adding the user to default user type
                                             db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                                 if (err) {
@@ -448,6 +449,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                                             res.status(410).jsonp({msg:iErr});
                                             next(iErr);
                                         } else {
+                                        	let insertedId = result.insertId;
                                             //Adding the user to default user type
                                             db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                                 if (err) {
