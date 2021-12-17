@@ -17,6 +17,11 @@ function getRefreshToken(id, type){
     return jwt.sign({id: id, type: type}, process.env.REFRESH_TOKEN_SECRET);
 }
 
+function getEmailToken(id, type){
+    // PUT BACK IN PROD THE EXPIRESIN TO 1h
+    return jwt.sign({id: id, type: type}, process.env.EMAIL_TOKEN_SECRET);
+}
+
 let regValidate = [
     check('email', 'Username Must Be an Email Address').isEmail(),
     check('surname').exists(),
