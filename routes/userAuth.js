@@ -65,7 +65,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
             //Verifying that the user doesn't exist in table then inserting the data
             db.query("SELECT * FROM user WHERE email IS NOT NULL AND BINARY email = ? OR phone IS NOT NULL AND BINARY phone = ?", [regData.email, regData.phone], async (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -73,14 +73,14 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                     } else {
                         db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 //Adding the user to default user type
                                 let insertedId = result.insertId;
                                 db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                     if (err) {
-                                        res.status(410).jsonp({msg:err});
+                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                         next(err);
                                     } else {
                                         let regData2 = {
@@ -89,7 +89,7 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                         };
                                         db.query("INSERT INTO user_category SET ?", [regData2], async (iErr, result2) => {
                                             if (err) {
-                                                res.status(410).jsonp({msg:err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             }
                                             else{
@@ -131,7 +131,6 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
                                                             let msg = "Account created, but impossible to sent a confirmation email to " + mailOptions.to + ". Please contact support.";
                                                             res.status(500).jsonp({data:{id: insertedId, qrCode: qrCode + '.' + insertedId, accessToken: token, refreshToken: refToken}, msg:msg});
                                                         }
-                                                        next(err);
                                                     }
                                                 });
                                             }
@@ -145,7 +144,8 @@ router.post("/v1/user/register", regValidate, async (req, res, next) => {
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -157,18 +157,19 @@ router.post('/v1/user/token/', refToken, (req, res, next) => {
     try{
         dbAuth.query("SELECT id FROM user_refresh_token WHERE refresh_token = ?", [req.body.refresh_token], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if(rows[0]){
-                    res.status(200).jsonp({data:{accessToken: getAccessToken(rows[0].id, 'user')}, msg:"success"});
+                    res.status(200).jsonp({data:{accessToken: getAccessToken(rows[0].id, 'user')}, msg:"Access token refreshed."});
                 } else {
                     res.status(403).jsonp({msg:"Refresh token is not valid."});
                 }
             }
         });
     } catch(err){
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -182,7 +183,7 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
         validationResult(req).throw();
         db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -191,10 +192,10 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
                         const token = getAccessToken(rows[0].id, 'user');
                         dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
-                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"success"});
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"You logged in successfully."});
                                 else{
                                     refToken = getRefreshToken(rows[0].id, 'user');
                                     let saveRefToken = {
@@ -203,10 +204,10 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
                                     }
                                     dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            res.status(410).jsonp({msg:err});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                            res.status(200).jsonp({data:{id: rows[0].id, qrCode: rows[0].qr_key + '.' + rows[0].id, accessToken: token, refreshToken: refToken}, msg:"You logged in successfully."});
                                         }
                                     });
                                 }
@@ -221,7 +222,8 @@ router.post('/v1/user/login', logAuth, (req, res, next) => {
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -240,7 +242,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
         if(req.body.provider == 'google'){
             db.query("SELECT * FROM user_social WHERE BINARY email = ? AND social_id = ? AND provider = 'google'", [req.body.email, req.body.userId], async (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -248,10 +250,10 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                         const token = getAccessToken(rows[0].user, 'user');
                         dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].user], async (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
-                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"success"});
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"You logged in successfully."});
                                 else{
                                     refToken = getRefreshToken(rows[0].user, 'user');
                                     let saveRefToken = {
@@ -260,10 +262,10 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                                     }
                                     dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
-                                            res.status(410).jsonp({msg:err});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key + '.' + rows[0].user, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                            res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key + '.' + rows[0].user, accessToken: token, refreshToken: refToken}, msg:"You logged in successfully."});
                                         }
                                     });
                                 }
@@ -272,7 +274,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                     } else {
                         db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 if(rows[0]){
@@ -298,14 +300,14 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                                     
                                     db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
                                         if (iErr) {
-                                            res.status(410).jsonp({msg:iErr});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(iErr);
                                         } else {
                                         	let insertedId = result.insertId;
                                             //Adding the user to default user type
                                             db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                                 if (err) {
-                                                    res.status(410).jsonp({msg:err});
+                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                     next(err);
                                                 } else {
                                                     let regData2 = {
@@ -322,13 +324,13 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
 
                                                     db.query("INSERT INTO user_category SET ?", [regData2], async (iErr, result2) => {
                                                         if (iErr) {
-                                                            res.status(410).jsonp({msg:iErr});
+                                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                             next(iErr);
                                                         }
                                                         else{
                                                             db.query("INSERT INTO user_social SET ?", [socData], async (iErr, result2) => {
                                                                 if(iErr){
-                                                                    res.status(410).jsonp({msg:iErr});
+                                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                     next(iErr);
                                                                 } else {
                                                                     refToken = getRefreshToken(result.insertId, 'user');
@@ -388,7 +390,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
         } else if (req.body.provider == 'facebook'){
             db.query("SELECT * FROM user_social WHERE BINARY email = ? AND social_id = ? AND provider = 'facebook'", [req.body.email, req.body.userId], async (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -396,10 +398,10 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                         const token = getAccessToken(rows[0].user, 'user');
                         dbAuth.query("SELECT refresh_token FROM user_refresh_token WHERE id = ?", [rows[0].user], async (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
-                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"success"});
+                                if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"You logged in successfully."});
                                 else{
                                     refToken = getRefreshToken(rows[0].user, 'user');
                                     let saveRefToken = {
@@ -408,10 +410,10 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                                     }
                                     dbAuth.query("INSERT INTO user_refresh_token SET ?", [saveRefToken], async (err, rows3, results) => {
                                         if(err){
-                                            res.status(410).jsonp({msg:err});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(err);
                                         } else {
-                                            res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key + '.' + rows[0].user, accessToken: token, refreshToken: refToken}, msg:"success"});
+                                            res.status(200).jsonp({data:{id: rows[0].user, qrCode: rows[0].qr_key + '.' + rows[0].user, accessToken: token, refreshToken: refToken}, msg:"You logged in successfully."});
                                         }
                                     });
                                 }
@@ -420,7 +422,7 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                     } else {
                         db.query("SELECT * FROM user WHERE BINARY email = ?", [req.body.email], async (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 if(rows[0]){
@@ -446,14 +448,14 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
                                     
                                     db.query("INSERT INTO user SET ?", [regData], async (iErr, result) => {
                                         if (iErr) {
-                                            res.status(410).jsonp({msg:iErr});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(iErr);
                                         } else {
                                         	let insertedId = result.insertId;
                                             //Adding the user to default user type
                                             db.query("SELECT * FROM user_type WHERE BINARY name = 'Default'", async (err, rows2, results2) => {
                                                 if (err) {
-                                                    res.status(410).jsonp({msg:err});
+                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                     next(err);
                                                 } else {
                                                     let regData2 = {
@@ -470,13 +472,13 @@ router.post('/v1/user/social/', socialAuth, async (req, res, next) => {
 
                                                     db.query("INSERT INTO user_category SET ?", [regData2], async (iErr, result2) => {
                                                         if (iErr) {
-                                                            res.status(410).jsonp({msg:iErr});
+                                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                             next(iErr);
                                                         }
                                                         else{
                                                             db.query("INSERT INTO user_social SET ?", [socData], async (iErr, result2) => {
                                                                 if(iErr){
-                                                                    res.status(410).jsonp({msg:iErr});
+                                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                     next(iErr);
                                                                 } else {
                                                                     refToken = getRefreshToken(result.insertId, 'user');

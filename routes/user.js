@@ -18,13 +18,12 @@ router.put('/v1/user/password', passAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
         } else {
             validationResult(req).throw();
 
             db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -33,7 +32,7 @@ router.put('/v1/user/password', passAuth, (req, res, next) => {
                             if(req.body.oldPassword == null){
                                 db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
                                     if (iErr) {
-                                        res.status(410).jsonp({msg:iErr});
+                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                         next(iErr);
                                     } else {
                                         res.status(200).jsonp({msg: "Password successfully set up!"});
@@ -55,7 +54,7 @@ router.put('/v1/user/password', passAuth, (req, res, next) => {
                                 if (bcrypt.compareSync(req.body.oldPassword, hashed_pwd)) {
                                     db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
                                         if (iErr) {
-                                            res.status(410).jsonp({msg:iErr});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(iErr);
                                         } else {
                                             res.status(200).jsonp({msg: "Password successfully modified!"});
@@ -73,7 +72,8 @@ router.put('/v1/user/password', passAuth, (req, res, next) => {
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -81,11 +81,10 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
         }
         db.query("SELECT * FROM user WHERE id = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -96,7 +95,7 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
                     }
                     db.query("SELECT * FROM user_social WHERE user = ?", [req.decoded.id], (err, rows2, results) => {
                         if(err){
-                            res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: false, facebook: false}, msg:"success"});
+                            res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: false, facebook: false}, msg:"Profile loaded."});
                             next(err);
                         } else {
                             if(rows2[0]){
@@ -106,9 +105,9 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
                                     if(element.provider == 'google') google = true;
                                     else if(element.provider == 'facebook') facebook = true;
                                 });
-                                res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: google, facebook: facebook}, msg:"success"});
+                                res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: google, facebook: facebook}, msg:"Profile loaded."});
                             } else {
-                                res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: false, facebook: false}, msg:"success"});
+                                res.status(200).jsonp({data:{id: rows[0].id, surname: rows[0].surname, name: rows[0].name, qrCode: rows[0].qr_key, phone: rows[0].phone, email: rows[0].email, birthdate: birthdate, passwordSet: passwordSet, google: false, facebook: false}, msg:"Profile loaded."});
                             }
                         }
                     });
@@ -118,7 +117,8 @@ router.get('/v1/user/profile', midWare.checkToken, (req, res, next) => {
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -127,25 +127,26 @@ router.put('/v1/user/profile', midWare.checkToken, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
+        } else {
+            let usrData = {
+                surname: req.body.surname,
+                name: req.body.name,
+                email: req.body.email,
+                phone: req.body.phone,
+                birthdate: req.body.birthdate
+            };
+            db.query("UPDATE user SET ? WHERE id = ?", [usrData, req.decoded.id], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                    next(err);
+                } else {
+                    res.status(200).jsonp({msg:"Profile updated successfully!"});
+                }
+            });
         }
-        let usrData = {
-            surname: req.body.surname,
-            name: req.body.name,
-            email: req.body.email,
-            phone: req.body.phone,
-            birthdate: req.body.birthdate
-        };
-        db.query("UPDATE user SET ? WHERE id = ?", [usrData, req.decoded.id], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp({msg:err});
-                next(err);
-            } else {
-                res.status(200).jsonp({msg:"Profile updated successfully!"});
-            }
-        });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -159,36 +160,38 @@ router.delete("/v1/user/register", midWare.checkToken, (req, res, next) => {
             email: "",
             birthdate: new Date(),
             qr_key: "",
-            verified: '0',
-            active: '0'
+            verified: 0,
+            active: 0
         };
 
         db.query("DELETE FROM balance WHERE user = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             }
         });
 
         db.query("DELETE FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             }
         });
 
         db.query("UPDATE user SET ? WHERE id = ?", [regData, req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 res.status(200).jsonp({msg:"Account successfully deleted!"});
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
+
 
 let likeAuth = [
     check('company').exists(),
@@ -200,67 +203,68 @@ router.post('/v1/user/like/', likeAuth, (req, res, next) => {
     try {
         if(req.decoded.type != 'user'){
             res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
-        }
-        db.query("SELECT * FROM company WHERE id = ?", [req.body.company], (err, rows, results) => {
-            if (err) {
-                res.status(410).jsonp({msg:err});
-                next(err);
-            } else {
-                if (rows[0]) {
-                    db.query("SELECT * FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
-                        if (err) {
-                            res.status(410).jsonp({msg:err});
-                            next(err);
-                        } else {
-                            if(rows[0]){
-                                var alreadyLiked = 0;
-                                if (rows.length < 20){
-                                    rows.forEach(element => {
-                                        if(element.company == req.body.company) alreadyLiked = 1;
-                                    });
-
-                                    if(alreadyLiked == 1) res.status(200).jsonp({msg:"You already liked this company!"});
-                                    else{
-                                        let likeData = {
-                                            user: req.decoded.id,
-                                            company: req.body.company
-                                        };
-                                        db.query("INSERT INTO user_like SET ?", [likeData], (err, rows, results) => {
-                                            if (err) {
-                                                res.status(410).jsonp({msg:err});
-                                                next(err);
-                                            } else {
-                                                res.status(200).jsonp({msg:"Company successfully added to your likes!"});
-                                            }
+        } else {
+                db.query("SELECT * FROM company WHERE id = ?", [req.body.company], (err, rows, results) => {
+                if (err) {
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                    next(err);
+                } else {
+                    if (rows[0]) {
+                        db.query("SELECT * FROM user_like WHERE user = ?", [req.decoded.id], (err, rows, results) => {
+                            if (err) {
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                                next(err);
+                            } else {
+                                if(rows[0]){
+                                    var alreadyLiked = 0;
+                                    if (rows.length < 20){
+                                        rows.forEach(element => {
+                                            if(element.company == req.body.company) alreadyLiked = 1;
                                         });
+
+                                        if(alreadyLiked == 1) res.status(200).jsonp({msg:"You already liked this company!"});
+                                        else{
+                                            let likeData = {
+                                                user: req.decoded.id,
+                                                company: req.body.company
+                                            };
+                                            db.query("INSERT INTO user_like SET ?", [likeData], (err, rows, results) => {
+                                                if (err) {
+                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                                                    next(err);
+                                                } else {
+                                                    res.status(200).jsonp({msg:"Company successfully added to your likes!"});
+                                                }
+                                            });
+                                        }
+                                    } else {
+                                        res.status(409).jsonp({msg:"You have reached the max likes amount (20)!"});
                                     }
                                 } else {
-                                    res.status(409).jsonp({msg:"You have reached the max likes amount (20)!"});
+                                    let likeData = {
+                                        user: req.decoded.id,
+                                        company: req.body.company
+                                    };
+                                    db.query("INSERT INTO user_like SET ?", [likeData], (err, rows, results) => {
+                                        if (err) {
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                                            next(err);
+                                        } else {
+                                            res.status(200).jsonp({msg:"Company successfully added to your likes!"});
+                                        }
+                                    });
                                 }
-                            } else {
-                                let likeData = {
-                                    user: req.decoded.id,
-                                    company: req.body.company
-                                };
-                                db.query("INSERT INTO user_like SET ?", [likeData], (err, rows, results) => {
-                                    if (err) {
-                                        res.status(410).jsonp({msg:err});
-                                        next(err);
-                                    } else {
-                                        res.status(200).jsonp({msg:"Company successfully added to your likes!"});
-                                    }
-                                });
                             }
-                        }
-                    });
-                } else {
-                    res.status(404).jsonp({msg:"Company not found!"});
+                        });
+                    } else {
+                        res.status(404).jsonp({msg:"Company not found!"});
+                    }
                 }
-            }
-        });
+            });
+        }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -272,7 +276,7 @@ router.delete('/v1/user/like/', likeAuth, (req, res, next) => {
         }
         db.query("SELECT * FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.body.company], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if(!rows[0]){
@@ -280,7 +284,7 @@ router.delete('/v1/user/like/', likeAuth, (req, res, next) => {
                 } else {
                     db.query("DELETE FROM user_like WHERE user = ? AND company = ?", [req.decoded.id, req.body.company], (err, rows, results) => {
                         if (err) {
-                            res.status(410).jsonp({msg:err});
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(err);
                         } else {
                             res.status(200).jsonp({msg:"Company successfully removed from your likes!"});
@@ -290,7 +294,8 @@ router.delete('/v1/user/like/', likeAuth, (req, res, next) => {
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -302,7 +307,7 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
         }
         db.query("SELECT company.id AS id, company.name AS name, company.description AS description, company.logo_link AS logoUrl FROM user_like LEFT JOIN company ON user_like.company = company.id WHERE user = ? AND company.active = 1", [req.decoded.id], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else if (rows[0]){
                 const bucketName = "fidelight-api";
@@ -319,13 +324,14 @@ router.get('/v1/user/like/', midWare.checkToken, (req, res, next) => {
                     counter++;
                 });
 
-                res.status(200).jsonp({data:rows, msg:"success"});
+                res.status(200).jsonp({data:rows, msg:"Liked companies loaded."});
             } else {
                 res.status(404).jsonp({msg:"No company liked yet!"});
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -336,14 +342,14 @@ router.get('/v1/user/verify/:token', (req, res, next) => {
         if(decodedToken.type == 'user' && decodedToken.id){
             db.query("SELECT verified, active FROM user WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if(rows[0]){
                     // route for new accounts
                     if((rows[0].verified != 1) && (rows[0].active == 2)){
                         db.query("UPDATE user SET verified = 1, active = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:'Your account has been verified !'});
@@ -353,7 +359,7 @@ router.get('/v1/user/verify/:token', (req, res, next) => {
                     } else if (rows[0].verified != 1){
                         db.query("UPDATE user SET verified = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:'Your account has been verified !'});
@@ -371,7 +377,8 @@ router.get('/v1/user/verify/:token', (req, res, next) => {
             res.status(401).json({msg:'Please provide a valide token.'});
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -385,54 +392,54 @@ let socialAuth = [
 
 router.post('/v1/user/connect/social/', socialAuth, async (req, res, next) => {
     try {
-        if(req.decoded.type != 'user'){
-            res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
-        }
-
         validationResult(req).throw();
 
-        if(req.body.provider == 'google' || req.body.provider == 'facebook'){
-            db.query("SELECT * FROM user_social WHERE BINARY email = ? AND social_id = ? AND provider = ?", [req.body.email, req.body.userId, req.body.provider], async (err, rows, results) => {
-                if (err) {
-                    res.status(410).jsonp({msg:err});
-                    next(err);
-                } else {
-                    if (rows[0]) {
-                        // The account exists, then we just give back a token
-                        if(rows[0].user == req.decoded.id){
-                            res.status(200).jsonp({msg:"Your " + req.body.provider + " account is already linked to your Fidelight account."});
-                        } else {
-                            res.status(409).jsonp({msg:"This " + req.body.provider + " account is already linked to another Fidelight account."});
-                        }
-                    } else {
-                        let socData = {
-                            user: req.decoded.id,
-                            social_id: req.body.userId,
-                            email: req.body.email,
-                            provider: req.body.provider
-                        }
-
-                        db.query("INSERT INTO user_social SET ?", [socData], async (iErr, result2) => {
-                            if(iErr){
-                                res.status(410).jsonp({msg:iErr});
-                                next(iErr);
-                            } else {
-                                let content = await emailFunctions.generateLinkedSocialAccountEmail(req.body.provider);
-                                let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
-                                let resultEmail = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
-
-                                res.status(200).jsonp({msg:"Account successfully linked."});
-                            }
-                        });
-                    }
-                }
-            });
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp({msg:'Access forbidden'});
         } else {
-            res.status(404).jsonp({msg: "Provider not found"});
+                if(req.body.provider == 'google' || req.body.provider == 'facebook'){
+                db.query("SELECT * FROM user_social WHERE BINARY email = ? AND social_id = ? AND provider = ?", [req.body.email, req.body.userId, req.body.provider], async (err, rows, results) => {
+                    if (err) {
+                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                        next(err);
+                    } else {
+                        if (rows[0]) {
+                            // The account exists, then we just give back a token
+                            if(rows[0].user == req.decoded.id){
+                                res.status(200).jsonp({msg:"Your " + req.body.provider + " account is already linked to your Fidelight account."});
+                            } else {
+                                res.status(409).jsonp({msg:"This " + req.body.provider + " account is already linked to another Fidelight account."});
+                            }
+                        } else {
+                            let socData = {
+                                user: req.decoded.id,
+                                social_id: req.body.userId,
+                                email: req.body.email,
+                                provider: req.body.provider
+                            }
+
+                            db.query("INSERT INTO user_social SET ?", [socData], async (iErr, result2) => {
+                                if(iErr){
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                                    next(iErr);
+                                } else {
+                                    let content = await emailFunctions.generateLinkedSocialAccountEmail(req.body.provider);
+                                    let mailOptions = await emailFunctions.generateEmailOptions(req.body.email, content);
+                                    let resultEmail = await emailFunctions.sendEmail(mailOptions).catch(e => console.log("Error:", e.message));
+
+                                    res.status(200).jsonp({msg:"Account successfully linked."});
+                                }
+                            });
+                        }
+                    }
+                });
+            } else {
+                res.status(404).jsonp({msg: "Provider not found"});
+            }
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -443,49 +450,49 @@ let delSocialAuth = [
 
 router.delete('/v1/user/connect/social/', delSocialAuth, async (req, res, next) => {
     try {
-        if(req.decoded.type != 'user'){
-            res.status(403).jsonp({msg:'Access forbidden'});
-            return 2;
-        }
-
         validationResult(req).throw();
 
-        if(req.body.provider == 'google' || req.body.provider == 'facebook'){
-            db.query("SELECT * FROM user_social WHERE user = ? AND provider = ?", [req.decoded.id, req.body.provider], async (err, rows, results) => {
-                if (err) {
-                    res.status(410).jsonp({msg:err});
-                    next(err);
-                } else {
-                    if (rows[0]) {
-                        db.query("SELECT hash_pwd FROM user WHERE id = ?", [req.decoded.id], async (err, rows, results) => {
-                            if(err){
-                                res.status(410).jsonp({msg:err});
-                                next(err);
-                            } else {
-                                if(rows[0].hash_pwd == null){
-                                    res.status(403).jsonp({msg:"Please set up your password before unlinking your " + req.body.provider + " account."});
-                                } else {
-                                    db.query("DELETE FROM user_social WHERE user = ? AND provider = ?", [req.decoded.id, req.body.provider], async (err, rows, results) => {
-                                        if(err){
-                                            res.status(410).jsonp({msg:err});
-                                            next(err);
-                                        } else {
-                                            res.status(200).jsonp({msg:"Your " + req.body.provider + " account was unlinked from your Fidelight account."});
-                                        }
-                                    });
-                                }
-                            }
-                        });  
-                    } else {
-                        res.status(404).jsonp({msg:"No " + req.body.provider + " account linked to this Fidelight account."});
-                    }
-                }
-            });
+        if(req.decoded.type != 'user'){
+            res.status(403).jsonp({msg:'Access forbidden'});
         } else {
-            res.status(404).jsonp({msg: "Provider not found"});
+                if(req.body.provider == 'google' || req.body.provider == 'facebook'){
+                db.query("SELECT * FROM user_social WHERE user = ? AND provider = ?", [req.decoded.id, req.body.provider], async (err, rows, results) => {
+                    if (err) {
+                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                        next(err);
+                    } else {
+                        if (rows[0]) {
+                            db.query("SELECT hash_pwd FROM user WHERE id = ?", [req.decoded.id], async (err, rows, results) => {
+                                if(err){
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                                    next(err);
+                                } else {
+                                    if(rows[0].hash_pwd == null){
+                                        res.status(403).jsonp({msg:"Please set up your password before unlinking your " + req.body.provider + " account."});
+                                    } else {
+                                        db.query("DELETE FROM user_social WHERE user = ? AND provider = ?", [req.decoded.id, req.body.provider], async (err, rows, results) => {
+                                            if(err){
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+                                                next(err);
+                                            } else {
+                                                res.status(200).jsonp({msg:"Your " + req.body.provider + " account was unlinked from your Fidelight account."});
+                                            }
+                                        });
+                                    }
+                                }
+                            });  
+                        } else {
+                            res.status(404).jsonp({msg:"No " + req.body.provider + " account linked to this Fidelight account."});
+                        }
+                    }
+                });
+            } else {
+                res.status(404).jsonp({msg: "Provider not found"});
+            }
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 

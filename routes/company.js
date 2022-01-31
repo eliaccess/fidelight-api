@@ -48,12 +48,11 @@ router.get('/v1/company/types', (req, res, next) => {
     try {
         db.query("SELECT id, name, description, logo_link AS logoUrl FROM company_type", (err, rows, result) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
                     const bucketName = "fidelight-api";
-
                     var counter = 0;
                     rows.forEach(type => {
                         if(type.logoUrl == null){
@@ -65,15 +64,14 @@ router.get('/v1/company/types', (req, res, next) => {
                         }
                         counter++;
                     });
-                    
-                    res.status(200).jsonp({data:rows, msg: "success"});
+                    res.status(200).jsonp({data:rows, msg: "Company types has been loaded."});
                 } else {
                     res.status(410).jsonp({msg:"No company type found!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).jsonp({msg:"An error has occured. Please contact our support or try again later."});
     }
 });
 
@@ -121,12 +119,12 @@ router.get('/v1/company/schedule/:companyId', midWare.checkToken, (req, res, nex
     try {
         db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.params.companyId], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg: err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else if (rows[0]){
                 db.query("SELECT day, open_am AS openAm, close_am AS closeAm, open_pm AS openPm, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].id], (err, rows2, results) => {
                     if(err){
-                        res.status(410).jsonp({msg: err});
+                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                         next(err);
                     }
                     else if(rows2[0]) {
@@ -145,7 +143,7 @@ router.get('/v1/company/schedule/:companyId', midWare.checkToken, (req, res, nex
                             counter++;
                         });
 
-                        res.status(200).jsonp({data: rows2, msg: "success"});
+                        res.status(200).jsonp({data: rows2, msg: "Schedules has been loaded."});
                     } else {
                         res.status(404).jsonp({msg: "No schedule registered for this company location!"})
                     }
@@ -155,7 +153,8 @@ router.get('/v1/company/schedule/:companyId', midWare.checkToken, (req, res, nex
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -170,18 +169,17 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
             db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows2, results) => {
                 if (err) {
                     res.status(410).jsonp({msg: err});
-                    next(err);
+                    next({msg:"An error has occured. Please contact our support or try again later."});
                 } else if (rows2[0]){
                     if(!checkScheduleFormat(req.body.schedule)) res.status(400).jsonp('Error in the request format');
                     else {
                         db.query("SELECT * FROM schedule WHERE company_location = ?", [rows2[0].id], (err, rows, results) => {
                             if(err){
                                 res.status(410).jsonp({msg: err});
-                                next(err);
+                                next({msg:"An error has occured. Please contact our support or try again later."});
                             }
                             else {
                                 let scheData = [];
-                                let scheDataDay = {};
                                 let dayToAdd = [];
 
                                 req.body.schedule.forEach(element => {
@@ -208,26 +206,25 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
                                         if(doesExist != -1) {
                                             db.query("UPDATE schedule SET ? WHERE id = ?", [element, doesExist], (err, rows, results) => {
                                                 if(err){
-                                                    res.status(410).jsonp({msg:err});
+                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                     next(err);
                                                 }
                                             });
                                         } else {
                                             db.query("INSERT INTO schedule SET ?", [element], (err, rows, results) => {
                                                 if(err){
-                                                    res.status(410).jsonp({msg:err});
+                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                     next(err);
                                                 }
                                             });
                                         }
                                     });
-
-                                    res.status(200).jsonp("Schedule updated successfully");
+                                    res.status(200).jsonp({msg:"Schedule updated successfully"});
                                 } else {
                                     scheData.forEach(element => {
                                         db.query("INSERT INTO schedule SET ?", [element], (err, rows, results) => {
                                             if(err){
-                                                res.status(410).jsonp(err);
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             }
                                         });
@@ -243,7 +240,7 @@ router.post('/v1/company/schedule/', postSchedule, (req, res, next) => {
             });
         }
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
     }
 });
 
@@ -255,12 +252,12 @@ router.delete('/v1/company/schedule/:day', midWare.checkToken, (req, res, next) 
         } else {
             db.query("SELECT id FROM company_location WHERE company = ? AND billing_adress = 1", [req.decoded.id], (err, rows, results) => {
                 if(err){
-                    res.status(410).jsonp(err);
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     db.query("DELETE FROM schedule WHERE company_location = ? AND day = ?", [rows[0].id, req.params.day], (err, rows, results) => {
                         if(err){
-                            res.status(410).jsonp(err);
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(err);
                         } else {
                             res.status(200).jsonp({msg: "Schedule deleted successfully!"})
@@ -282,7 +279,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                 /* checking of the company exists */
                 db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                     if (err) {
-                        res.status(410).jsonp({msg:err});
+                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                         next(err);
                     } else if (rows[0]){
                         /* if a logo already exists, then we replace it, else we just create one */
@@ -291,7 +288,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                             var companyLogin = rows[0].login;
                             fs.unlink(rows[0].logo_link, function(err, rows){
                                 if(err && err.code !== "ENOENT"){
-                                    res.status(410).jsonp({msg:err});
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
@@ -310,7 +307,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                         );
                                         db.query("UPDATE company SET logo_link = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
                                             if (err) {
-                                                res.status(410).jsonp({msg: err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             } else {
                                                 res.status(200).jsonp({msg:"Logo added successfully!", data: {logoUrl: publicUrl}});
@@ -336,7 +333,7 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
                                     );
                                     db.query("UPDATE company SET logo_link = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
                                         if (err) {
-                                            res.status(410).jsonp({msg: err});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(err);
                                         } else {
                                             res.status(200).jsonp({msg:"Logo added successfully!", data: {logoUrl: publicUrl}});
@@ -354,8 +351,8 @@ router.post(('/v1/company/logo/'), multer.single('logo'), midWare.checkToken, (r
             }
         }
     } catch (err) {
-        console.log(err);
-        res.status(400).json(err);
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -368,7 +365,7 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
         } else {
             db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if (rows[0]){
                     bucketName = "fidelight-api";
@@ -385,7 +382,7 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
 
                         db.query("UPDATE company SET logo_link = null WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:'Logo deleted successfully!'});
@@ -400,8 +397,8 @@ router.delete(('/v1/company/logo/'), midWare.checkToken, (req, res, next) => {
             });
         }
     } catch (err) {
-        console.log(err);
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -416,7 +413,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                 /* checking of the company exists */
                 db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                     if (err) {
-                        res.status(410).jsonp({msg:err});
+                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                         next(err);
                     } else if (rows[0]){
                         /* if a logo already exists, then we replace it, else we just create one */
@@ -425,7 +422,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                             var companyLogin = rows[0].login;
                             fs.unlink(rows[0].background_picture, function(err, rows){
                                 if(err && err.code !== "ENOENT"){
-                                    res.status(410).jsonp({msg:err});
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                     next(err);
                                 } else {
                                     // Create a new blob in the bucket and upload the file data.
@@ -444,7 +441,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                                         );
                                         db.query("UPDATE company SET background_picture = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
                                             if (err) {
-                                                res.status(410).jsonp({msg: err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             } else {
                                                 res.status(200).jsonp({msg:"Background picture added successfully!", data: {backgroundPicture: publicUrl}});
@@ -470,7 +467,7 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
                                     );
                                     db.query("UPDATE company SET background_picture = ? WHERE id = ?", [blob.name, req.decoded.id], (err, rows, results) => {
                                         if (err) {
-                                            res.status(410).jsonp({msg: err});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(err);
                                         } else {
                                             res.status(200).jsonp({msg:"Background picture added successfully!", data: {backgroundPicture: publicUrl}});
@@ -488,8 +485,8 @@ router.post(('/v1/company/background/'), multer.single('backgroundPicture'), mid
             }
         }
     } catch (err) {
-        console.log(err);
-        res.status(400).json(err);
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -502,7 +499,7 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
         } else {
             db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if (rows[0]){
                     bucketName = "fidelight-api";
@@ -519,7 +516,7 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
 
                         db.query("UPDATE company SET background_picture = null WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:'Background picture deleted successfully!'});
@@ -534,8 +531,8 @@ router.delete(('/v1/company/background/'), midWare.checkToken, (req, res, next) 
             });
         }
     } catch (err) {
-        console.log(err);
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -549,7 +546,7 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
         } else {
             db.query("SELECT * FROM company WHERE BINARY id = ?", [req.decoded.id], async (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if (rows[0]){
                     if(rows[0].active == 0){
@@ -581,7 +578,7 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
                         /* Deleting the company from users liked companies */
                         db.query("DELETE FROM user_like WHERE company = ?", [req.decoded.id], async (err, rows, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             }
                         });
@@ -589,14 +586,14 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
                         /* Deleting company private information */
                         db.query("UPDATE company SET login='', hash_pwd='', salt='', email='', website='', description='', phone='', background_picture='', logo_link='', active=0 WHERE BINARY id = ?", [req.decoded.id], async (err, rows, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             }
                             else{
                                 /* Deleting locations photo locations */
                                 db.query("SELECT id FROM company_location WHERE company = ?", [req.decoded.id], async (err, rows2, results) => {
                                     if(err){
-                                        res.status(410).jsonp({msg:err});
+                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                         next(err);
                                     } else {
                                         if(rows2){
@@ -604,14 +601,14 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
                                                 /* Deleting the company schedule */
                                                 db.query("DELETE FROM schedule WHERE company_location = ?", [line.id], async (err, rows, results) => {
                                                     if(err){
-                                                        res.status(410).jsonp({msg:err});
+                                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                         next(err);
                                                     }
                                                 });
                                                 /* Getting every picture link to delete them */
                                                 db.query("SELECT picture_link FROM company_location_picture WHERE company_location = ?", [line.id], async (err, rows3, results) => {
                                                     if(err){
-                                                        res.status(410).jsonp({msg:err});
+                                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                         next(err);
                                                     } else {
                                                         if(rows3){
@@ -629,7 +626,7 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
 
                                                             db.query("DELETE FROM company_location_picture WHERE company_location = ?", [line.id], async (err, rows, results) => {
                                                                 if(err){
-                                                                    res.status(410).jsonp({msg:err});
+                                                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                     next(err);
                                                                 }
                                                             });
@@ -642,19 +639,19 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
                                         /* removing company location private information */
                                         db.query("UPDATE company_location SET phone='', siret='', longitude=null, latitude=null, street_number='', street_name='' WHERE company = ?", [req.decoded.id], async (err, rows, results) => {
                                             if(err){
-                                                res.status(410).jsonp({msg:err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             } else {
                                                 /* Deleting users balances in that company */
                                                 db.query("DELETE FROM balance WHERE company = ?", [req.decoded.id], async (err, rows, results) => {
                                                     if(err){
-                                                        res.status(410).jsonp({msg:err});
+                                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                         next(err);
                                                     } else {
                                                         /* Deleting discounts and discounts information from the company */
                                                         db.query("SELECT * FROM discount WHERE company = ? AND active = 1", [req.decoded.id], async (err, results) => {
                                                             if(err){
-                                                                res.status(410).jsonp({msg:err});
+                                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                 next(err);
                                                             } else {
                                                                 if(results[0]){
@@ -671,12 +668,12 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
 
                                                                         db.query("DELETE FROM discount_repetition WHERE discount = ?", [element.id], async (err, result) => {
                                                                             if (err) {
-                                                                                res.status(410).jsonp({msg:err});
+                                                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                                 next(err);
                                                                             } else {
                                                                                 db.query("DELETE FROM discount_value WHERE discount = ?", [element.id], async (err, result) => {
                                                                                     if (err) {
-                                                                                        res.status(410).jsonp({msg:err});
+                                                                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                                         next(err);
                                                                                     } else {
                                                                                         const dstInfo = {
@@ -688,7 +685,7 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
                                                                                         }
                                                                                         db.query("UPDATE discount SET ? WHERE id = ?", [dstInfo, element.id], async (err, result) => {
                                                                                             if (err) {
-                                                                                                res.status(410).jsonp({msg:err});
+                                                                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                                                                 next(err);
                                                                                             } else {
                                                                                                 res.status(200).jsonp({msg:"Account deleted successfully!"});
@@ -716,11 +713,13 @@ router.delete('/v1/company/register', midWare.checkToken, async (req, res, next)
                     }
                 } else {
                     res.status(410).jsonp({msg:"Authentication failed!"});
+                    next(err);
                 }
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -729,7 +728,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
         if(req.decoded.type == 'company' && (req.decoded.id == req.params.companyId || req.params.companyId == 'me')){
             db.query("SELECT company.id AS id, company.name AS name, company.company_type AS companyType, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registrationDate, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -775,7 +774,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         /* Adding the schedule of the company if it exists */
                         db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 if(rows2[0]){
@@ -794,9 +793,9 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                         counter++;
                                     });
                                     companyInfo.schedule = rows2;
-                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                    res.status(200).jsonp({data:companyInfo, msg:"Company profile loaded."});
                                 } else {
-                                    res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                    res.status(200).jsonp({data:companyInfo, msg:"Company profile loaded."});
                                 }
                             }
                         });
@@ -808,7 +807,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
         } else {
             db.query("SELECT company.id AS id, company.name AS name, company.company_type AS companyType, company.website AS website, company.phone AS phone, company.email AS email, company.registration_date AS registrationDate, company.description AS description, company.logo_link AS logo, company.background_picture AS background_picture, company_location.id AS company_location, company_location.street_number AS street_number, company_location.street_name AS street_name, company_location.city AS city, company_location.country AS country FROM company LEFT JOIN company_location ON company_location.company = company.id WHERE company.id = ? AND company_location.billing_adress = 1", [req.params.companyId], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -854,7 +853,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                         /* Adding the schedule of the company if it exists, then checking if the company was liked by the user */
                         db.query("SELECT day, open_am AS openAM, close_am AS closeAM, open_pm AS openPM, close_pm AS closePm FROM schedule WHERE company_location = ? ORDER BY day ASC", [rows[0].company_location], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 if(rows2[0]){
@@ -876,7 +875,7 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                 }
                                 db.query("SELECT (SELECT COUNT(*) FROM user_like WHERE user = ? AND company = ?) AS liked, (SELECT points FROM balance WHERE user = ? and company = ?) AS balance", [req.decoded.id, req.params.companyId, req.decoded.id, req.params.companyId], (err, rows3, results) => {
                                     if(err){
-                                        res.status(410).jsonp({msg:err});
+                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                         next(err);
                                     } else if (rows3[0].liked != 0) {
                                         companyInfo.isFavorite = true;
@@ -885,14 +884,14 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
                                         } else {
                                             companyInfo.userPoints = rows3[0].balance
                                         }
-                                        res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                        res.status(200).jsonp({data:companyInfo, msg:"Company profile loaded."});
                                     } else {
                                         if (rows3[0].balance == null){
                                             companyInfo.userPoints = 0
                                         } else {
                                             companyInfo.userPoints = rows3[0].balance
                                         }
-                                        res.status(200).jsonp({data:companyInfo, msg:"success"});
+                                        res.status(200).jsonp({data:companyInfo, msg:"Company profile loaded."});
                                     }
                                 });
                             }
@@ -904,7 +903,8 @@ router.get('/v1/company/profile/:companyId', midWare.checkToken, (req, res, next
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -945,12 +945,12 @@ router.put('/v1/company/profile/', updateProf, (req, res, next) => {
 
             db.query("UPDATE company SET ? WHERE id = ?", [companyInfo, req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     db.query("UPDATE company_location SET ? WHERE company = ?", [cLocInfo, req.decoded.id], (err, rows, results) => {
                         if (err) {
-                            res.status(410).jsonp({msg:err});
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(err);
                         } else {
                             res.status(200).jsonp({msg:"Company profile updated successfully!"});
@@ -960,7 +960,8 @@ router.put('/v1/company/profile/', updateProf, (req, res, next) => {
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -985,7 +986,7 @@ router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next
 
             db.query("SELECT * FROM company WHERE id = ?", [req.decoded.id], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if (rows[0]) {
@@ -993,7 +994,7 @@ router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next
                         if (bcrypt.compareSync(req.body.oldPassword, hashed_pwd)) {
                             db.query("UPDATE company SET ? WHERE id = ?", [regData, req.decoded.id], (iErr, iRows, iResult) => {
                                 if (iErr) {
-                                    res.status(410).jsonp({msg:iErr});
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                     next(iErr);
                                 } else {
                                     res.status(200).jsonp({msg: "Password successfully updated!"});
@@ -1009,7 +1010,8 @@ router.put('/v1/company/password', passAuth, midWare.checkToken, (req, res, next
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -1020,14 +1022,14 @@ router.get('/v1/company/verify/:token', (req, res, next) => {
     	if(decodedToken.type == 'company' && decodedToken.id){
     		db.query("SELECT verified, active FROM company WHERE id = ?", [decodedToken.id], (err, rows, results) => {
     			if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if(rows[0]){
                 	// route for new accounts
                 	if((rows[0].verified != 1) && (rows[0].active == 2)){
                 		db.query("UPDATE company SET verified = 1, active = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                 			if (err) {
-			                    res.status(410).jsonp({msg:err});
+			                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
 			                    next(err);
 			                } else {
 			                	res.status(200).jsonp({msg:'Your account has been verified !'});
@@ -1037,7 +1039,7 @@ router.get('/v1/company/verify/:token', (req, res, next) => {
                 	} else if (rows[0].verified != 1){
                 		db.query("UPDATE company SET verified = 1 WHERE id = ?", [decodedToken.id], (err, rows, results) => {
                 			if (err) {
-			                    res.status(410).jsonp({msg:err});
+			                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
 			                    next(err);
 			                } else {
 			                	res.status(200).jsonp({msg:'Your account has been verified !'});
@@ -1055,7 +1057,8 @@ router.get('/v1/company/verify/:token', (req, res, next) => {
     		res.status(401).json({msg:'Please provide a valide token.'});
     	}
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 

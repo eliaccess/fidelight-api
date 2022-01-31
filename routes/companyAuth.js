@@ -51,7 +51,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
         
         db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], async (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -78,7 +78,7 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                     };
                     db.query("INSERT INTO company SET ?", [regData], async (iErr, result) => {
                         if (iErr) {
-                            res.status(410).jsonp({msg:iErr});
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(iErr);
                         } else {
                             let insertedId = result.insertId;
@@ -94,10 +94,10 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
                             };
                             db.query("INSERT INTO company_location SET ?", [usrData], async (iaErr, logResult) => {
                                 if (iaErr) {
-                                    res.status(410).jsonp({msg:iaErr});
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                     next(iaErr);
                                 } else {
-                                    refToken = getRefreshToken(result.insertId, 'company');
+                                    let refToken = getRefreshToken(result.insertId, 'company');
                                     let token = getAccessToken(result.insertId, 'company');
 
                                     let saveRefToken = {
@@ -148,8 +148,8 @@ router.post('/v1/company/register', regValidate, async (req, res, next) => {
             }
         });
     } catch (err) {
-        console.log(err);
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -164,7 +164,7 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
 
         db.query("SELECT * FROM company WHERE BINARY email = ?", [req.body.email], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
@@ -173,7 +173,7 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
                         const token = getAccessToken(rows[0].id, 'company');
                         dbAuth.query("SELECT refresh_token FROM company_refresh_token WHERE id = ?", [rows[0].id], (err, rows2, results) => {
                             if(err){
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 if(rows2[0]) res.status(200).jsonp({data:{id: rows[0].id, accessToken: token, refreshToken: rows2[0].refresh_token}, msg:"Successfully logged in."});
@@ -185,7 +185,7 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
                                     }
                                     dbAuth.query("INSERT INTO company_refresh_token SET ?", [saveRefToken], (err, rows3, results) => {
                                         if(err){
-                                            res.status(410).jsonp({msg:err});
+                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                             next(err);
                                         } else {
                                             res.status(200).jsonp({data:{id: rows[0].id, accessToken: token, refreshToken: refToken}, msg:"Successfully logged in."});
@@ -203,7 +203,8 @@ router.post('/v1/company/login', tokenAuth, (req, res, next) => {
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -215,18 +216,19 @@ router.post('/v1/company/token/', refToken, (req, res, next) => {
     try{
         dbAuth.query("SELECT id FROM company_refresh_token WHERE refresh_token = ?", [req.body.refreshToken], (err, rows, results) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if(rows[0]){
-                    res.status(200).jsonp({data:{accessToken: getAccessToken(rows[0].id, 'company')}, msg:"success"});
+                    res.status(200).jsonp({data:{accessToken: getAccessToken(rows[0].id, 'company')}, msg:"Access token refreshed."});
                 } else {
                     res.status(403).jsonp({msg:"Refresh token is not valid."});
                 }
             }
         });
     } catch(err){
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 

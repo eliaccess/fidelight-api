@@ -24,13 +24,13 @@ router.post('/v1/company/points', cpyPoint, (req, res, next) => {
             }
             db.query("SELECT 1 FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows, result) => {
                 if(err){
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if(rows[0]){
                         db.query("UPDATE points_earning SET ? WHERE company = ?", [point, req.decoded.id], (err, rows, result) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:"Point earning policy edited successfully!"});
@@ -39,7 +39,7 @@ router.post('/v1/company/points', cpyPoint, (req, res, next) => {
                     } else {
                         db.query("INSERT INTO points_earning SET ?", [point], (err, rows, result) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:"Point earning policy added successfully!"});
@@ -50,7 +50,8 @@ router.post('/v1/company/points', cpyPoint, (req, res, next) => {
             });
         }
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -58,17 +59,17 @@ router.get('/v1/company/points/:companyId', midWare.checkToken, (req, res, next)
     try {
         db.query("SELECT * FROM points_earning WHERE company = ?", [req.params.companyId], (err, rows, result) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if(rows[0]){
                     db.query("SELECT * FROM points_earning_type WHERE id = ?", [rows[0].points_earning_type], (err, rows2, result) => {
                         if(err){
-                            res.status(410).jsonp({msg:err});
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(err);
                         } else {
                             if(rows2[0]){
-                                res.status(200).jsonp({data:{type: rows[0].points_earning_type, value: rows[0].value, title: rows2[0].title, description: rows2[0].description }, msg:"success"});
+                                res.status(200).jsonp({data:{type: rows[0].points_earning_type, value: rows[0].value, title: rows2[0].title, description: rows2[0].description }, msg:"Company earning policy has been successfully loaded."});
                             } else {
                                 res.status(400).jsonp({msg:"The type of earning policy is not valid. Please contact support."});
                             }
@@ -80,7 +81,8 @@ router.get('/v1/company/points/:companyId', midWare.checkToken, (req, res, next)
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -105,13 +107,13 @@ router.put('/v1/company/points/', upCpyPoint, (req, res, next) => {
             }
             db.query("SELECT 1 FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows, result) => {
                 if(err){
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else {
                     if(rows[0]){
                         db.query("UPDATE points_earning SET ? WHERE company = ?", [point, req.decoded.id], (err, rows, result) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:"Point edited successfully!"});
@@ -120,7 +122,7 @@ router.put('/v1/company/points/', upCpyPoint, (req, res, next) => {
                     } else {
                         db.query("INSERT INTO points_earning SET ?", [point], (err, rows, result) => {
                             if (err) {
-                                res.status(410).jsonp({msg:err});
+                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                 next(err);
                             } else {
                                 res.status(200).jsonp({msg:"Point added successfully!"});
@@ -131,32 +133,10 @@ router.put('/v1/company/points/', upCpyPoint, (req, res, next) => {
             });
         } 
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
-
-/*
-router.delete('/api/company/points/', midWare.checkToken, (req, res, next) => {
-    try {
-        if(req.decoded.type != 'company'){
-            res.status(403).jsonp('Access forbidden');
-            return 2;
-        }
-
-        validationResult(req).throw();
-        db.query("DELETE FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows, result) => {
-            if (err) {
-                res.status(410).jsonp(err);
-                next(err);
-            } else {
-                res.status(200).jsonp("Point deleted successfully!");
-            }
-        });
-    } catch (err) {
-        res.status(400).json(err);
-    }
-});
-*/
 
 
 router.get('/v1/points/type', midWare.checkToken,(req, res, next) => {
@@ -164,18 +144,19 @@ router.get('/v1/points/type', midWare.checkToken,(req, res, next) => {
         validationResult(req).throw();
         db.query("SELECT * FROM points_earning_type", (err, rows, result) => {
             if (err) {
-                res.status(410).jsonp({msg:err});
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(200).jsonp({data:rows, msg:"success"});
+                    res.status(200).jsonp({data:rows, msg:"Earning points policies loaded."});
                 } else {
                     res.status(410).jsonp({msg:"Point type not found!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -214,19 +195,19 @@ router.post('/v1/company/points/gift/', giftPts, (req, res, next) => {
             /* Verify the key of the user */
             db.query("SELECT * FROM user WHERE id = ? and qr_key = ?", [userId, userQr], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if (rows[0]){
                     /* Creating the transaction */
                     db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
                         if (err) {
-                            res.status(410).jsonp({msg:err});
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(err);
                         } else {
                             /* Verify if the account already exists for the user in that company */
                             db.query("SELECT points FROM balance WHERE company = ? AND user = ?", [req.decoded.id, userId], (err, rows2, results2) => {
                                 if(err){
-                                    res.status(410).jsonp({msg:err});
+                                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                     next(err);
                                 } else {
                                     /* if it exists : adding the points, else creating the account and adding the amount of points */
@@ -236,10 +217,10 @@ router.post('/v1/company/points/gift/', giftPts, (req, res, next) => {
                                         };
                                         db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows3, results3) => {
                                             if(err){
-                                                res.status(410).jsonp({msg:err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             } else {
-                                                res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"success"});
+                                                res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"Points successfully transfered."});
                                             }
                                         });
                                     } else {
@@ -250,10 +231,10 @@ router.post('/v1/company/points/gift/', giftPts, (req, res, next) => {
                                         };
                                         db.query("INSERT INTO balance SET ?", blcData, (err, rows3, results3) => {
                                             if(err){
-                                                res.status(410).jsonp({msg:err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             } else {
-                                                res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"success"});
+                                                res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"Points successfully transfered."});
                                             }
                                         });
                                     }
@@ -268,7 +249,8 @@ router.post('/v1/company/points/gift/', giftPts, (req, res, next) => {
             });
         } 
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -306,13 +288,13 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
             /* Verify the key of the user */
             db.query("SELECT * FROM user WHERE id = ? and qr_key = ?", [userId, userQr], (err, rows, results) => {
                 if (err) {
-                    res.status(410).jsonp({msg:err});
+                    res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                     next(err);
                 } else if (rows[0]){
                     /* Calculating the amount of points needed for the transaction */
                     db.query("SELECT * FROM points_earning WHERE company = ?", [req.decoded.id], (err, rows3, results3) => {
                         if(err) {
-                            res.status(410).jsonp({msg:err});
+                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                             next(err);
                         } else {
                             let toAdd = 0;
@@ -328,13 +310,13 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
                                 /* Creating the transaction */
                                 db.query("INSERT INTO transaction SET ?", trData, (err, rows, results) => {
                                     if (err) {
-                                        res.status(410).jsonp({msg:err});
+                                        res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                         next(err);
                                     } else {
                                         /* Verify if the account already exists for the user in that company */
                                         db.query("SELECT points FROM balance WHERE company = ? AND user = ?", [req.decoded.id, userId], (err, rows2, results2) => {
                                             if(err){
-                                                res.status(410).jsonp({msg:err});
+                                                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                 next(err);
                                             } else {
                                                 /* if it exists : adding the points, else creating the account and adding the amount of points */
@@ -344,10 +326,10 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
                                                     };
                                                     db.query("UPDATE balance SET ? WHERE company = ? AND user = ?", [blcData, req.decoded.id, userId], (err, rows4, results4) => {
                                                         if(err){
-                                                            res.status(410).jsonp({msg:err});
+                                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                             next(err);
                                                         } else {
-                                                            res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"success"});
+                                                            res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"Offer successfully activated."});
                                                         }
                                                     });
                                                 } else {
@@ -358,10 +340,10 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
                                                     };
                                                     db.query("INSERT INTO balance SET ?", blcData, (err, rows4, results4) => {
                                                         if(err){
-                                                            res.status(410).jsonp({msg:err});
+                                                            res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                                                             next(err);
                                                         } else {
-                                                            res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"success"});
+                                                            res.status(200).jsonp({data:{transaction: rows.insertId}, msg:"Offer successfully activated."});
                                                         }
                                                     });
                                                 }
@@ -381,7 +363,8 @@ router.post('/v1/company/points/use/', usePts, (req, res, next) => {
             });
         } 
     } catch (err) {
-        res.status(400).json({msg:err});
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 

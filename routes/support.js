@@ -26,14 +26,15 @@ router.post('/v1/support/ticket', newTicketVry, (req, res, next) => {
         }
         db.query("INSERT INTO ticket SET ?", [ticket], (err, rows, result) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
-                res.status(200).jsonp("Ticket added successfully!");
+                res.status(200).jsonp({msg:"Ticket added successfully!"});
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).jsonp({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -51,14 +52,15 @@ router.post('/v1/support/ticket/:ticketId', upTicketVry, (req, res, next) => {
         }
         db.query("UPDATE ticket SET ? WHERE id = ?", [ticket, req.params.ticketId], (err, rows, result) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
-                res.status(200).jsonp("Ticket updated successfully!");
+                res.status(200).jsonp({msg:"Ticket updated successfully!"});
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
@@ -70,18 +72,19 @@ router.get('/v1/support/ticket/:ticketId', ticketVry, (req, res, next) => {
     try {
         db.query("SELECT * FROM ticket WHERE id = ?", [req.params.ticketId], (err, rows, result) => {
             if (err) {
-                res.status(410).jsonp(err);
+                res.status(410).jsonp({msg:"An error has occured. Please contact our support or try again later."});
                 next(err);
             } else {
                 if (rows[0]) {
-                    res.status(200).jsonp(rows[0]);
+                    res.status(200).jsonp({data:rows[0], msg:"Ticket loaded."});
                 } else {
-                    res.status(410).jsonp("Ticket not found!");
+                    res.status(410).jsonp({msg:"Ticket not found!"});
                 }
             }
         });
     } catch (err) {
-        res.status(400).json(err);
+        res.status(400).json({msg:"An error has occured. Please contact our support or try again later."});
+        next(err);
     }
 });
 
